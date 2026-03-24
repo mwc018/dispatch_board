@@ -2,9 +2,18 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db/database');
 
+// Stores the last raw payload received — for debugging field names
+let lastPayload = null;
+
+router.get('/zoho/last', (req, res) => {
+  res.json(lastPayload || { message: 'No webhook received yet' });
+});
+
 router.post('/zoho', (req, res) => {
   try {
     const payload = req.body;
+    lastPayload = payload;
+    console.log('[Webhook] Received:', JSON.stringify(payload, null, 2));
     const records = Array.isArray(payload) ? payload : payload.data || [payload];
 
     let created = 0;

@@ -17,7 +17,8 @@ router.post('/zoho', (req, res) => {
       const subject = record.Subject || record.Name || record.subject || 'Untitled Service Order';
       const customerName =
         record.Contact_Name?.name || record.Account_Name?.name || record.Customer_Name || record.contact_name || null;
-      const address = record.Address || record.Service_Address || record.Mailing_Street || record.address || null;
+      const addressParts = [record.Billing_Street, record.Billing_City, record.Billing_State, record.Billing_Code].filter(Boolean);
+      const address = record.Address || (addressParts.length ? addressParts.join(' ') : null) || record.Service_Address || record.Mailing_Street || null;
       const description = record.Description || record.description || null;
       const phone = record.Phone || record.Mobile || record.phone || null;
 

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
@@ -11,10 +11,11 @@ export default function ServiceOrderCard({
   onSetNotes,
   onUnassign,
   onDelete,
-  isDragging: externalDragging,
   compact,
   notes,
 }) {
+  const [expanded, setExpanded] = useState(false);
+
   const {
     attributes,
     listeners,
@@ -37,17 +38,21 @@ export default function ServiceOrderCard({
       className={`so-card ${isDragging ? 'so-card--dragging' : ''} ${compact ? 'so-card--compact' : ''}`}
       {...attributes}
       {...listeners}
+      onClick={() => item.description && setExpanded((e) => !e)}
     >
       <div className="so-card__body">
         <div className="so-card__header">
-          {priority && (
-            <span className="so-card__priority">#{priority}</span>
-          )}
-          {scheduledTime && (
-            <span className="so-card__time">{scheduledTime}</span>
-          )}
+          {priority && <span className="so-card__priority">#{priority}</span>}
+          {scheduledTime && <span className="so-card__time">{scheduledTime}</span>}
           <span className="so-card__subject">{item.subject}</span>
+          {item.description && (
+            <span className="so-card__expand-hint">{expanded ? '▲' : '▼'}</span>
+          )}
         </div>
+
+        {item.account_name && (
+          <div className="so-card__account">{item.account_name}</div>
+        )}
         {item.customer_name && (
           <div className="so-card__customer">{item.customer_name}</div>
         )}
@@ -57,9 +62,15 @@ export default function ServiceOrderCard({
         {item.phone && (
           <div className="so-card__phone">{item.phone}</div>
         )}
+
+        {expanded && item.description && (
+          <div className="so-card__description">{item.description}</div>
+        )}
+
         {notes && (
           <div className="so-card__notes">{notes}</div>
         )}
+
         {(onSetTime || onUnassign || onDelete || onSetNotes) && (
           <div className="so-card__actions" onPointerDown={(e) => e.stopPropagation()}>
             {onSetTime && (

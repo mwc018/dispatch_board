@@ -23,28 +23,30 @@ router.post('/zoho', (req, res) => {
       const zohoId = record.id || record.ID;
       if (!zohoId) continue;
 
-      const subject = record.Subject || record.Name || record.subject || 'Untitled Service Order';
-      const customerName =
-        record.Contact_Name?.name || record.Account_Name?.name || record.Customer_Name || record.contact_name || null;
-      const addressParts = [record.Billing_Street, record.Billing_City, record.Billing_State, record.Billing_Code].filter(Boolean);
-      const address = record.Address || (addressParts.length ? addressParts.join(' ') : null) || record.Service_Address || record.Mailing_Street || null;
-      const description = record.Description || record.description || null;
-      const phone = record.Phone || record.Mobile || record.phone || null;
+      const subject = record.Subject || record.subject || 'Untitled Service Order';
+      const accountName = record.account_name || record.Account_Name?.name || null;
+      const firstName = record.contact_name_first || '';
+      const lastName = record.contact_name_last || '';
+      const customerName = [firstName, lastName].filter(Boolean).join(' ') || null;
+      const addressParts = [record.billing_street, record.billing_city, record.billing_state, record.billing_code].filter(Boolean);
+      const address = addressParts.length ? addressParts.join(', ') : null;
+      const description = record.description || record.Description || null;
+      const phone = record.phone || record.Phone || record.Mobile || null;
 
       const existing = db.prepare('SELECT id FROM service_orders WHERE zoho_id = ?').get([String(zohoId)]);
 
       if (existing) {
         db.prepare(`
           UPDATE service_orders
-          SET subject = ?, customer_name = ?, address = ?, description = ?, phone = ?, updated_at = datetime('now')
+          SET subject = ?, account_name = ?, customer_name = ?, address = ?, description = ?, phone = ?, updated_at = datetime('now')
           WHERE zoho_id = ?
-        `).run([subject, customerName, address, description, phone, String(zohoId)]);
+        `).run([subject, accountName, customerName, address, description, phone, String(zohoId)]);
         updated++;
       } else {
         const result = db.prepare(`
-          INSERT INTO service_orders (zoho_id, subject, customer_name, address, description, phone, status)
-          VALUES (?, ?, ?, ?, ?, ?, 'unassigned')
-        `).run([String(zohoId), subject, customerName, address, description, phone]);
+          INSERT INTO service_orders (zoho_id, subject, account_name, customer_name, address, description, phone, status)
+          VALUES (?, ?, ?, ?, ?, ?, ?, 'unassigned')
+        `).run([String(zohoId), subject, accountName, customerName, address, description, phone]);
 
         const maxPos = db.prepare('SELECT COALESCE(MAX(position), -1) as m FROM unassigned_order').get();
         db.prepare('INSERT OR IGNORE INTO unassigned_order (service_order_id, position) VALUES (?, ?)')

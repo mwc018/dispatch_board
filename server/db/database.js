@@ -21,6 +21,7 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     zoho_id TEXT UNIQUE NOT NULL,
     subject TEXT NOT NULL,
+    account_name TEXT,
     customer_name TEXT,
     address TEXT,
     description TEXT,
@@ -64,5 +65,8 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_assignments_date ON dispatch_assignments(dispatch_date);
   CREATE INDEX IF NOT EXISTS idx_assignments_tech ON dispatch_assignments(technician_id, dispatch_date);
 `);
+
+// Migrations — safe to run repeatedly
+try { db.exec('ALTER TABLE service_orders ADD COLUMN account_name TEXT'); } catch (_) {}
 
 module.exports = db;

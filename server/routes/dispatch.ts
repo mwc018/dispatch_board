@@ -101,7 +101,7 @@ router.post('/assign', async (req: Request, res: Response) => {
 });
 
 router.post('/unassign', async (req: Request, res: Response) => {
-  const { service_order_id, date } = req.body;
+  const { service_order_id, date, position } = req.body;
   if (!service_order_id) return res.status(400).json({ error: 'service_order_id is required' });
 
   const dispatchDate = date || new Date().toISOString().split('T')[0];
@@ -111,8 +111,14 @@ router.post('/unassign', async (req: Request, res: Response) => {
   db.prepare('DELETE FROM dispatch_assignments WHERE service_order_id = ? AND dispatch_date = ?').run([service_order_id, dispatchDate]);
   db.prepare("UPDATE service_orders SET status = 'unassigned', updated_at = datetime('now') WHERE id = ?").run([service_order_id]);
 
-  const maxPos = db.prepare('SELECT COALESCE(MAX(position), -1) as m FROM unassigned_order').get();
-  db.prepare('INSERT OR IGNORE INTO unassigned_order (service_order_id, position) VALUES (?, ?)').run([service_order_id, maxPos.m + 1]);
+  if (typeof position === 'number') {
+    // Shift everything at or after the target position down by 1, then insert
+    db.prepare('UPDATE unassigned_order SET position = position + 1 WHERE position >= ?').run([position]);
+    db.prepare('INSERT OR IGNORE INTO unassigned_order (service_order_id, position) VALUES (?, ?)').run([service_order_id, position]);
+  } else {
+    const maxPos = db.prepare('SELECT COALESCE(MAX(position), -1) as m FROM unassigned_order').get();
+    db.prepare('INSERT OR IGNORE INTO unassigned_order (service_order_id, position) VALUES (?, ?)').run([service_order_id, (maxPos as any).m + 1]);
+  }
 
   updateServiceOrderAssignment({
     zohoId: order.zoho_id,

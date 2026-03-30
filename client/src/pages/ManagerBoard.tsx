@@ -182,7 +182,11 @@ export default function ManagerBoard() {
     // Moving from tech → unassigned
     if (sourceContainer.startsWith('tech_') && targetContainer === 'unassigned') {
       const assignment = findAssignmentByDndId(activeDndId);
-      if (assignment) await unassignOrder(assignment.service_order_id, date);
+      if (!assignment) return;
+      // Find where in the queue the item was dropped
+      const dropIdx = board.unassigned.findIndex((o) => `so_${o.id}` === overDndId);
+      const position = dropIdx >= 0 ? dropIdx : undefined;
+      await unassignOrder(assignment.service_order_id, date, position);
     }
 
     // Moving from tech → different tech

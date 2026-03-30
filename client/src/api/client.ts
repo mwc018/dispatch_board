@@ -22,8 +22,8 @@ export const assignOrder = (payload: {
 }): Promise<BoardState> =>
   api.post('/dispatch/assign', payload).then((r) => r.data);
 
-export const unassignOrder = (service_order_id: number, date: string): Promise<BoardState> =>
-  api.post('/dispatch/unassign', { service_order_id, date }).then((r) => r.data);
+export const unassignOrder = (service_order_id: number, date: string, position?: number): Promise<BoardState> =>
+  api.post('/dispatch/unassign', { service_order_id, date, position }).then((r) => r.data);
 
 export const reorderUnassigned = (ordered_ids: number[], date: string): Promise<BoardState> =>
   api.post('/dispatch/reorder-unassigned', { ordered_ids, date }).then((r) => r.data);

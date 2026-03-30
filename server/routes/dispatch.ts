@@ -100,24 +100,70 @@ router.post('/assign', async (req: Request, res: Response) => {
   res.json(board);
 });
 
+router.post('/also-assign', async (req: Request, res: Response) => {
+  const { service_order_id, technician_id, date } = req.body;
+  if (!service_order_id || !technician_id) {
+    return res.status(400).json({ error: 'service_order_id and technician_id are required' });
+  }
+
+  const dispatchDate = date || new Date().toISOString().split('T')[0];
+  const order = db.prepare('SELECT * FROM service_orders WHERE id = ?').get([service_order_id]) as any;
+  const tech = db.prepare('SELECT * FROM technicians WHERE id = ?').get([technician_id]) as any;
+  if (!order || !tech) return res.status(404).json({ error: 'Order or technician not found' });
+
+  const maxP = db.prepare(
+    'SELECT COALESCE(MAX(priority), 0) as m FROM dispatch_assignments WHERE technician_id = ? AND dispatch_date = ?'
+  ).get([technician_id, dispatchDate]) as any;
+
+  db.prepare(`
+    INSERT OR IGNORE INTO dispatch_assignments (service_order_id, technician_id, priority, dispatch_date)
+    VALUES (?, ?, ?, ?)
+  `).run([service_order_id, technician_id, maxP.m + 1, dispatchDate]);
+
+  db.prepare("UPDATE service_orders SET status = 'assigned', updated_at = datetime('now') WHERE id = ?").run([service_order_id]);
+
+  updateServiceOrderAssignment({
+    zohoId: order.zoho_id,
+    techName: tech.name,
+    priority: maxP.m + 1,
+    status: 'Assigned',
+  });
+
+  const board = getBoardState(dispatchDate);
+  req.app.get('io')?.emit('board:updated', board);
+  res.json(board);
+});
+
 router.post('/unassign', async (req: Request, res: Response) => {
-  const { service_order_id, date, position } = req.body;
+  const { service_order_id, date, position, technician_id } = req.body;
   if (!service_order_id) return res.status(400).json({ error: 'service_order_id is required' });
 
   const dispatchDate = date || new Date().toISOString().split('T')[0];
-  const order = db.prepare('SELECT * FROM service_orders WHERE id = ?').get([service_order_id]);
+  const order = db.prepare('SELECT * FROM service_orders WHERE id = ?').get([service_order_id]) as any;
   if (!order) return res.status(404).json({ error: 'Order not found' });
 
-  db.prepare('DELETE FROM dispatch_assignments WHERE service_order_id = ? AND dispatch_date = ?').run([service_order_id, dispatchDate]);
-  db.prepare("UPDATE service_orders SET status = 'unassigned', updated_at = datetime('now') WHERE id = ?").run([service_order_id]);
-
-  if (typeof position === 'number') {
-    // Shift everything at or after the target position down by 1, then insert
-    db.prepare('UPDATE unassigned_order SET position = position + 1 WHERE position >= ?').run([position]);
-    db.prepare('INSERT OR IGNORE INTO unassigned_order (service_order_id, position) VALUES (?, ?)').run([service_order_id, position]);
+  if (technician_id) {
+    db.prepare('DELETE FROM dispatch_assignments WHERE service_order_id = ? AND technician_id = ? AND dispatch_date = ?')
+      .run([service_order_id, technician_id, dispatchDate]);
   } else {
-    const maxPos = db.prepare('SELECT COALESCE(MAX(position), -1) as m FROM unassigned_order').get();
-    db.prepare('INSERT OR IGNORE INTO unassigned_order (service_order_id, position) VALUES (?, ?)').run([service_order_id, (maxPos as any).m + 1]);
+    db.prepare('DELETE FROM dispatch_assignments WHERE service_order_id = ? AND dispatch_date = ?')
+      .run([service_order_id, dispatchDate]);
+  }
+
+  // Check if any assignments remain for this job today
+  const remaining = db.prepare('SELECT COUNT(*) as c FROM dispatch_assignments WHERE service_order_id = ? AND dispatch_date = ?')
+    .get([service_order_id, dispatchDate]) as any;
+
+  if (remaining.c === 0) {
+    db.prepare("UPDATE service_orders SET status = 'unassigned', updated_at = datetime('now') WHERE id = ?").run([service_order_id]);
+    if (typeof position === 'number') {
+      // Shift everything at or after the target position down by 1, then insert
+      db.prepare('UPDATE unassigned_order SET position = position + 1 WHERE position >= ?').run([position]);
+      db.prepare('INSERT OR IGNORE INTO unassigned_order (service_order_id, position) VALUES (?, ?)').run([service_order_id, position]);
+    } else {
+      const maxPos = db.prepare('SELECT COALESCE(MAX(position), -1) as m FROM unassigned_order').get();
+      db.prepare('INSERT OR IGNORE INTO unassigned_order (service_order_id, position) VALUES (?, ?)').run([service_order_id, (maxPos as any).m + 1]);
+    }
   }
 
   updateServiceOrderAssignment({
@@ -125,7 +171,7 @@ router.post('/unassign', async (req: Request, res: Response) => {
     techName: null,
     priority: null,
     scheduledTime: null,
-    status: 'Unassigned',
+    status: remaining.c === 0 ? 'Unassigned' : 'Assigned',
   });
 
   const board = getBoardState(dispatchDate);

@@ -12,8 +12,10 @@ interface ServiceOrderCardProps {
   onSetNotes?: (assignmentId: number | undefined, notes: string | null | undefined) => void;
   onUnassign?: (id: number) => void;
   onDelete?: (id: number) => void;
+  onAlsoAssign?: () => void;
   compact?: boolean;
   notes?: string | null;
+  coAssignees?: string[];
 }
 
 export default function ServiceOrderCard({
@@ -25,8 +27,10 @@ export default function ServiceOrderCard({
   onSetNotes,
   onUnassign,
   onDelete,
+  onAlsoAssign,
   compact,
   notes,
+  coAssignees,
 }: ServiceOrderCardProps) {
   const [expanded, setExpanded] = useState(false);
 
@@ -97,11 +101,26 @@ export default function ServiceOrderCard({
           </div>
         )}
 
-        {(onSetTime || onUnassign || onDelete || onSetNotes) && (
+        {coAssignees && coAssignees.length > 0 && (
+          <div className="text-[10px] text-slate-500 mt-1">
+            Also: {coAssignees.join(', ')}
+          </div>
+        )}
+
+        {(onSetTime || onUnassign || onDelete || onSetNotes || onAlsoAssign) && (
           <div
             className="flex flex-row gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity items-center mt-2 pt-2 border-t border-[#2a2f45]"
             onPointerDown={(e) => e.stopPropagation()}
           >
+            {onAlsoAssign && (
+              <button
+                className="bg-[#1a1d27] border border-[#2a2f45] px-2.5 py-1 rounded text-[11px] font-medium text-slate-400 cursor-pointer transition-colors hover:bg-[#21253a] hover:text-blue-400 hover:border-blue-500 whitespace-nowrap leading-none"
+                onClick={() => onAlsoAssign()}
+                title="Also assign to another tech"
+              >
+                + Also Assign
+              </button>
+            )}
             {onSetTime && (
               <button
                 className="bg-[#1a1d27] border border-[#2a2f45] px-2.5 py-1 rounded text-[11px] font-medium text-slate-400 cursor-pointer transition-colors hover:bg-[#2a2f45] hover:text-slate-200 hover:border-[#3a4060] whitespace-nowrap leading-none"

@@ -65,4 +65,29 @@ db.exec(`
 // Migrations
 try { db.exec('ALTER TABLE service_orders ADD COLUMN account_name TEXT'); } catch (_) {}
 
+// Migration: drop unique constraint on service_order_id+dispatch_date to allow multi-assign
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS dispatch_assignments_new (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      service_order_id INTEGER NOT NULL,
+      technician_id INTEGER NOT NULL,
+      priority INTEGER NOT NULL,
+      scheduled_time TEXT,
+      dispatch_date TEXT NOT NULL DEFAULT (date('now')),
+      notes TEXT,
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (service_order_id) REFERENCES service_orders(id) ON DELETE CASCADE,
+      FOREIGN KEY (technician_id) REFERENCES technicians(id) ON DELETE CASCADE,
+      UNIQUE(service_order_id, technician_id, dispatch_date)
+    );
+    INSERT OR IGNORE INTO dispatch_assignments_new SELECT * FROM dispatch_assignments;
+    DROP TABLE dispatch_assignments;
+    ALTER TABLE dispatch_assignments_new RENAME TO dispatch_assignments;
+    CREATE INDEX IF NOT EXISTS idx_assignments_date ON dispatch_assignments(dispatch_date);
+    CREATE INDEX IF NOT EXISTS idx_assignments_tech ON dispatch_assignments(technician_id, dispatch_date);
+  `);
+} catch (_) {}
+
 export default db;

@@ -6,30 +6,40 @@ import { TechWithAssignments, DndCardItem } from '../types';
 
 interface TechColumnProps {
   tech: TechWithAssignments;
+  allTechs: TechWithAssignments[];
   onSetTime: (assignmentId: number | undefined, scheduledTime: string | null | undefined) => void;
   onSetNotes: (assignmentId: number | undefined, notes: string | null | undefined) => void;
-  onUnassign: (id: number) => void;
+  onUnassign: (id: number, techId: number) => void;
+  onAlsoAssign: (serviceOrderId: number, currentTechId: number) => void;
 }
 
-export default function TechColumn({ tech, onSetTime, onSetNotes, onUnassign }: TechColumnProps) {
+export default function TechColumn({ tech, allTechs, onSetTime, onSetNotes, onUnassign, onAlsoAssign }: TechColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id: `tech_${tech.id}` });
 
   const assignments = tech.assignments || [];
 
-  const items: DndCardItem[] = assignments.map((a) => ({
-    dndId: `assign_${a.id}`,
-    id: a.service_order_id,
-    assignmentId: a.id,
-    subject: a.subject,
-    account_name: a.account_name,
-    customer_name: a.customer_name,
-    address: a.address,
-    phone: a.phone,
-    description: a.description,
-    priority: a.priority,
-    scheduled_time: a.scheduled_time,
-    notes: a.notes,
-  }));
+  const items: DndCardItem[] = assignments.map((a) => {
+    const coAssignees = allTechs
+      .filter((t) => t.id !== tech.id)
+      .filter((t) => (t.assignments || []).some((ta) => ta.service_order_id === a.service_order_id))
+      .map((t) => t.name);
+
+    return {
+      dndId: `assign_${a.id}`,
+      id: a.service_order_id,
+      assignmentId: a.id,
+      subject: a.subject,
+      account_name: a.account_name,
+      customer_name: a.customer_name,
+      address: a.address,
+      phone: a.phone,
+      description: a.description,
+      priority: a.priority,
+      scheduled_time: a.scheduled_time,
+      notes: a.notes,
+      coAssignees,
+    };
+  });
 
   return (
     <div className="flex-1 min-w-[180px] bg-[#1a1d27] border border-[#2a2f45] rounded-lg flex flex-col overflow-hidden">
@@ -58,9 +68,11 @@ export default function TechColumn({ tech, onSetTime, onSetNotes, onUnassign }: 
               scheduledTime={item.scheduled_time}
               assignmentId={item.assignmentId}
               notes={item.notes}
+              coAssignees={item.coAssignees}
               onSetTime={onSetTime}
               onSetNotes={onSetNotes}
-              onUnassign={onUnassign}
+              onUnassign={(id) => onUnassign(id, tech.id)}
+              onAlsoAssign={() => onAlsoAssign(item.id, tech.id)}
             />
           ))}
         </SortableContext>

@@ -70,6 +70,7 @@ export interface DndCardItem {
   priority?: number;
   scheduled_time?: string | null;
   notes?: string | null;
+  coAssignees?: string[];
 }
 
 export interface AddTechData {

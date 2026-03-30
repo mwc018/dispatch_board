@@ -26,11 +26,13 @@ import ServiceOrderCard from '../components/ServiceOrderCard';
 import TimeModal from '../components/TimeModal';
 import NotesModal from '../components/NotesModal';
 import AddTechModal from '../components/AddTechModal';
+import AlsoAssignModal from '../components/AlsoAssignModal';
 import { useSocket } from '../hooks/useSocket';
 import {
   getBoard,
   assignOrder,
   unassignOrder,
+  alsoAssign,
   reorderUnassigned,
   reorderTech,
   setTime,
@@ -65,6 +67,7 @@ export default function ManagerBoard() {
   const [notesModal, setNotesModal] = useState<NotesModalState | null>(null);
   const [addTechOpen, setAddTechOpen] = useState(false);
   const [addOrderOpen, setAddOrderOpen] = useState(false);
+  const [alsoAssignModal, setAlsoAssignModal] = useState<{ serviceOrderId: number; currentTechId: number } | null>(null);
   const [newOrder, setNewOrder] = useState<AddOrderData>({ subject: '', customer_name: '', address: '', phone: '', description: '' });
 
   const fetchBoard = useCallback(async () => {
@@ -186,7 +189,8 @@ export default function ManagerBoard() {
       // Find where in the queue the item was dropped
       const dropIdx = board.unassigned.findIndex((o) => `so_${o.id}` === overDndId);
       const position = dropIdx >= 0 ? dropIdx : undefined;
-      await unassignOrder(assignment.service_order_id, date, position);
+      const sourceTechId = parseInt(sourceContainer.replace('tech_', ''));
+      await unassignOrder(assignment.service_order_id, date, position, sourceTechId);
     }
 
     // Moving from tech → different tech
@@ -227,8 +231,18 @@ export default function ManagerBoard() {
     setNotesModal(null);
   };
 
-  const handleUnassign = async (serviceOrderId: number) => {
-    await unassignOrder(serviceOrderId, date);
+  const handleUnassign = async (serviceOrderId: number, techId: number) => {
+    await unassignOrder(serviceOrderId, date, undefined, techId);
+  };
+
+  const handleAlsoAssign = (serviceOrderId: number, currentTechId: number) => {
+    setAlsoAssignModal({ serviceOrderId, currentTechId });
+  };
+
+  const handleAlsoAssignSave = async (targetTechId: number) => {
+    if (!alsoAssignModal) return;
+    await alsoAssign(alsoAssignModal.serviceOrderId, targetTechId, date);
+    setAlsoAssignModal(null);
   };
 
   const handleDelete = async (serviceOrderId: number) => {
@@ -327,9 +341,11 @@ export default function ManagerBoard() {
               <TechColumn
                 key={tech.id}
                 tech={tech}
+                allTechs={board.technicians}
                 onSetTime={handleSetTime}
                 onSetNotes={handleSetNotes}
                 onUnassign={handleUnassign}
+                onAlsoAssign={handleAlsoAssign}
               />
             ))}
             {board.technicians.length === 0 && (
@@ -363,6 +379,19 @@ export default function ManagerBoard() {
         isOpen={addTechOpen}
         onSave={handleAddTech}
         onClose={() => setAddTechOpen(false)}
+      />
+      <AlsoAssignModal
+        isOpen={!!alsoAssignModal}
+        onClose={() => setAlsoAssignModal(null)}
+        onAssign={handleAlsoAssignSave}
+        availableTechs={
+          alsoAssignModal
+            ? board.technicians.filter((t) =>
+                t.id !== alsoAssignModal.currentTechId &&
+                !(t.assignments || []).some((a) => a.service_order_id === alsoAssignModal.serviceOrderId)
+              )
+            : []
+        }
       />
 
       {addOrderOpen && (

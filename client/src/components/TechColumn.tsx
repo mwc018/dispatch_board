@@ -16,7 +16,6 @@ export default function TechColumn({ tech, onSetTime, onSetNotes, onUnassign }: 
 
   const assignments = tech.assignments || [];
 
-  // Build sortable items — use assignment id as dnd id to distinguish from unassigned
   const items: DndCardItem[] = assignments.map((a) => ({
     dndId: `assign_${a.id}`,
     id: a.service_order_id,
@@ -32,21 +31,24 @@ export default function TechColumn({ tech, onSetTime, onSetNotes, onUnassign }: 
     notes: a.notes,
   }));
 
-  const techColor = tech.color || '#3b82f6';
-
   return (
-    <div className="tech-column">
-      <div className="tech-column__header" style={{ borderTopColor: techColor }}>
-        <span className="tech-column__name">{tech.name}</span>
-        <span className="tech-column__count">{assignments.length} jobs</span>
+    <div className="flex-1 min-w-[180px] bg-[#1a1d27] border border-[#2a2f45] rounded-lg flex flex-col overflow-hidden">
+      <div
+        className="px-3 py-2.5 border-b border-[#2a2f45] border-t-[3px] flex-shrink-0 flex items-center justify-between"
+        style={{ borderTopColor: tech.color || '#3b82f6' }}
+      >
+        <span className="text-[13px] font-semibold text-slate-200">{tech.name}</span>
+        <span className="text-[11px] text-slate-500">{assignments.length} jobs</span>
       </div>
       <div
         ref={setNodeRef}
-        className={`tech-column__list ${isOver ? 'tech-column__list--over' : ''}`}
+        className={`flex-1 overflow-y-auto p-2 flex flex-col gap-[5px] min-h-[60px] transition-colors${isOver ? ' bg-blue-500/10 outline-dashed outline-2 outline-blue-500/40 outline-offset-[-4px] rounded' : ''}`}
       >
         <SortableContext items={items.map((i) => i.dndId)} strategy={verticalListSortingStrategy}>
           {items.length === 0 && (
-            <div className="tech-column__empty">Drop jobs here</div>
+            <div className="border-2 border-dashed border-[#2a2f45] rounded-lg p-4 text-center text-slate-500 text-[12px]">
+              Drop jobs here
+            </div>
           )}
           {items.map((item) => (
             <ServiceOrderCard

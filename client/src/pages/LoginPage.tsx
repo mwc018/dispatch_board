@@ -27,9 +27,9 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="login-page">
-      <div className="login-card">
-        <div className="login-card__logo">
+    <div className="min-h-screen bg-[#0f1117] flex items-center justify-center p-5">
+      <div className="bg-[#1a1d27] border border-[#2a2f45] rounded-xl shadow-2xl p-10 w-full max-w-sm flex flex-col items-center gap-3">
+        <div className="mb-1">
           <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
             <rect width="40" height="40" rx="10" fill="#3b82f6" />
             <rect x="8" y="10" width="10" height="4" rx="2" fill="white" />
@@ -41,13 +41,17 @@ export default function LoginPage() {
           </svg>
         </div>
 
-        <h1 className="login-card__title">Dispatch Board</h1>
-        <p className="login-card__subtitle">Sign in to access the dispatch board</p>
+        <h1 className="text-[22px] font-bold text-slate-200 tracking-tight">Dispatch Board</h1>
+        <p className="text-[13px] text-slate-500 mb-2">Sign in to access the dispatch board</p>
 
-        {error && <div className="login-card__error">{error}</div>}
+        {error && (
+          <div className="w-full bg-red-500/15 border border-red-500 text-red-400 rounded px-3 py-2 text-[13px]">
+            {error}
+          </div>
+        )}
 
         <button
-          className="btn btn--msal"
+          className="w-full flex items-center justify-center gap-2.5 px-4 py-[11px] text-[14px] font-semibold bg-[#21253a] text-slate-200 border border-[#2a2f45] rounded cursor-pointer transition-colors hover:bg-[#2a2f45] hover:border-[#3a4060] disabled:opacity-50 disabled:cursor-not-allowed"
           onClick={handleMsalLogin}
           disabled={loading}
         >
@@ -61,11 +65,16 @@ export default function LoginPage() {
         </button>
 
         {isDev && (
-          <div className="login-card__dev">
-            <div className="login-card__divider">
+          <div className="w-full flex flex-col gap-2.5">
+            <div className="flex items-center gap-2.5 text-slate-500 text-[11px] uppercase tracking-[0.06em]">
+              <span className="flex-1 h-px bg-[#2a2f45]" />
               <span>development only</span>
+              <span className="flex-1 h-px bg-[#2a2f45]" />
             </div>
-            <button className="btn btn--dev" onClick={handleDevLogin}>
+            <button
+              className="w-full flex items-center justify-center px-4 py-[9px] text-[13px] bg-transparent text-slate-500 border border-dashed border-[#2a2f45] rounded cursor-pointer transition-colors hover:bg-[#21253a] hover:text-slate-400 hover:border-[#3a4060]"
+              onClick={handleDevLogin}
+            >
               Dev Login (bypass auth)
             </button>
           </div>

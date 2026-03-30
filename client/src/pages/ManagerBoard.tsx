@@ -249,34 +249,58 @@ export default function ManagerBoard() {
     setAddOrderOpen(false);
   };
 
-  if (loading) return <div className="board-loading">Loading dispatch board...</div>;
-  if (error) return <div className="board-error">{error}</div>;
+  if (loading) return (
+    <div className="flex items-center justify-center h-screen text-slate-500 text-[15px]">
+      Loading dispatch board...
+    </div>
+  );
+  if (error) return (
+    <div className="flex items-center justify-center h-screen text-red-400 text-[15px]">
+      {error}
+    </div>
+  );
   if (!board) return null;
 
   return (
-    <div className="manager-board">
-      <div className="board-header">
-        <h1 className="board-header__title">Dispatch Board</h1>
-          {user && (
-            <div className="board-header__user">
-              <span className="board-header__username">{user.name}</span>
-              <button className="btn btn--ghost btn--sm" onClick={logout}>Sign out</button>
-            </div>
-          )}
-        <div className="board-header__controls">
+    <div className="flex flex-col h-screen bg-[#0f1117] overflow-hidden">
+      {/* Board Header */}
+      <div className="flex items-center justify-between px-4 py-2.5 bg-[#1a1d27] border-b border-[#2a2f45] flex-shrink-0">
+        <h1 className="text-base font-bold text-slate-200 tracking-wide">Dispatch Board</h1>
+        {user && (
+          <div className="flex items-center gap-2.5 ml-2 pl-3 border-l border-[#2a2f45]">
+            <span className="text-[13px] text-slate-400">{user.name}</span>
+            <button
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-transparent border border-[#2a2f45] text-slate-500 hover:bg-[#21253a] hover:text-slate-400 rounded text-[12px] font-medium cursor-pointer transition-colors"
+              onClick={logout}
+            >
+              Sign out
+            </button>
+          </div>
+        )}
+        <div className="flex items-center gap-2">
           <input
             type="date"
-            className="board-header__date"
+            className="px-2.5 py-1 border border-[#2a2f45] rounded text-[13px] text-slate-200 bg-[#21253a] focus:outline-none focus:border-blue-500 [color-scheme:dark]"
             value={date}
             onChange={(e) => setDate(e.target.value)}
           />
-          <button className="btn btn--secondary btn--sm" onClick={() => setAddOrderOpen(true)}>
+          <button
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#21253a] border border-[#2a2f45] text-slate-200 hover:bg-[#2a2f45] rounded text-[12px] font-medium cursor-pointer transition-colors"
+            onClick={() => setAddOrderOpen(true)}
+          >
             + Service Order
           </button>
-          <button className="btn btn--secondary btn--sm" onClick={() => setAddTechOpen(true)}>
+          <button
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#21253a] border border-[#2a2f45] text-slate-200 hover:bg-[#2a2f45] rounded text-[12px] font-medium cursor-pointer transition-colors"
+            onClick={() => setAddTechOpen(true)}
+          >
             + Technician
           </button>
-          <button className="btn btn--ghost btn--sm" onClick={handleSyncZoho} title="Sync technicians from Zoho CRM">
+          <button
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-transparent border border-[#2a2f45] text-slate-500 hover:bg-[#21253a] hover:text-slate-400 rounded text-[12px] cursor-pointer transition-colors"
+            onClick={handleSyncZoho}
+            title="Sync technicians from Zoho CRM"
+          >
             ⟳ Sync Zoho Techs
           </button>
         </div>
@@ -288,12 +312,13 @@ export default function ManagerBoard() {
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
-        <div className="board-layout">
+        {/* Board Layout */}
+        <div className="flex overflow-hidden" style={{ height: 'calc(100vh - 53px)' }}>
           <UnassignedQueue
             orders={board.unassigned}
             onDelete={handleDelete}
           />
-          <div className="board-techs">
+          <div className="flex flex-1 overflow-x-auto overflow-y-hidden gap-2 p-2 bg-[#0f1117]">
             {board.technicians.map((tech) => (
               <TechColumn
                 key={tech.id}
@@ -304,7 +329,7 @@ export default function ManagerBoard() {
               />
             ))}
             {board.technicians.length === 0 && (
-              <div className="board-techs__empty">
+              <div className="flex items-center justify-center flex-1 text-slate-500 text-[14px]">
                 No technicians yet. Add one to start dispatching.
               </div>
             )}
@@ -337,26 +362,52 @@ export default function ManagerBoard() {
       />
 
       {addOrderOpen && (
-        <div className="modal-overlay" onClick={() => setAddOrderOpen(false)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal__header">
-              <h3>Add Service Order</h3>
-              <button className="modal__close" onClick={() => setAddOrderOpen(false)}>✕</button>
+        <div className="fixed inset-0 bg-black/65 flex items-center justify-center z-50 backdrop-blur-sm" onClick={() => setAddOrderOpen(false)}>
+          <div className="bg-[#1a1d27] border border-[#2a2f45] rounded-lg shadow-2xl min-w-80 max-w-md w-full" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-[18px] py-3.5 border-b border-[#2a2f45]">
+              <h3 className="text-[15px] font-semibold text-slate-200">Add Service Order</h3>
+              <button
+                className="bg-none border-none text-[15px] cursor-pointer text-slate-500 px-1.5 py-0.5 rounded hover:bg-[#21253a] hover:text-slate-200 transition-colors"
+                onClick={() => setAddOrderOpen(false)}
+              >
+                ✕
+              </button>
             </div>
-            <div className="modal__body">
+            <div className="px-[18px] py-4 flex flex-col gap-3">
               {(['subject', 'customer_name', 'address', 'phone', 'description'] as const).map((field) => (
-                <label key={field} className="modal__label">
+                <label key={field} className="flex flex-col gap-1 text-[12px] font-medium text-slate-500 uppercase tracking-[0.05em]">
                   {field.replace('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
                   {field === 'description'
-                    ? <textarea className="modal__textarea" value={newOrder[field]} onChange={(e) => setNewOrder((o) => ({ ...o, [field]: e.target.value }))} rows={3} />
-                    : <input type="text" className="modal__input" value={newOrder[field]} onChange={(e) => setNewOrder((o) => ({ ...o, [field]: e.target.value }))} />
+                    ? <textarea
+                        className="px-2.5 py-2 border border-[#2a2f45] rounded text-[14px] text-slate-200 bg-[#21253a] focus:outline-none focus:border-blue-500 resize-y font-[inherit]"
+                        value={newOrder[field]}
+                        onChange={(e) => setNewOrder((o) => ({ ...o, [field]: e.target.value }))}
+                        rows={3}
+                      />
+                    : <input
+                        type="text"
+                        className="px-2.5 py-2 border border-[#2a2f45] rounded text-[14px] text-slate-200 bg-[#21253a] focus:outline-none focus:border-blue-500"
+                        value={newOrder[field]}
+                        onChange={(e) => setNewOrder((o) => ({ ...o, [field]: e.target.value }))}
+                      />
                   }
                 </label>
               ))}
             </div>
-            <div className="modal__footer">
-              <button className="btn btn--secondary" onClick={() => setAddOrderOpen(false)}>Cancel</button>
-              <button className="btn btn--primary" onClick={handleAddOrder} disabled={!newOrder.subject.trim()}>Add</button>
+            <div className="flex justify-end gap-2 px-[18px] py-3 border-t border-[#2a2f45]">
+              <button
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#21253a] border border-[#2a2f45] text-slate-200 hover:bg-[#2a2f45] rounded text-sm font-medium cursor-pointer transition-colors"
+                onClick={() => setAddOrderOpen(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded text-sm font-medium cursor-pointer transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                onClick={handleAddOrder}
+                disabled={!newOrder.subject.trim()}
+              >
+                Add
+              </button>
             </div>
           </div>
         </div>

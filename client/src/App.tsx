@@ -6,7 +6,6 @@ import { useAuth } from './hooks/useAuth';
 import ManagerBoard from './pages/ManagerBoard';
 import TechView from './pages/TechView';
 import LoginPage from './pages/LoginPage';
-import './styles.css';
 
 const msalInstance = new PublicClientApplication(msalConfig);
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { getTechBoard, getTechnicians } from '../api/client';
 import { useSocket } from '../hooks/useSocket';
+import { useAuth } from '../hooks/useAuth';
 import { TechBoardState, Technician } from '../types';
 
 interface TechViewProps {
@@ -8,6 +9,7 @@ interface TechViewProps {
 }
 
 export default function TechView({ techId: propTechId }: TechViewProps) {
+  const { logout } = useAuth();
   const params = new URLSearchParams(window.location.search);
   const techId = propTechId || params.get('techId');
   const today = new Date().toISOString().split('T')[0];
@@ -59,6 +61,12 @@ export default function TechView({ techId: propTechId }: TechViewProps) {
           {data?.tech ? `${data.tech.name}'s Jobs` : 'Tech View'}
         </h1>
         <div className="flex gap-2.5 items-center">
+          <button
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-transparent border border-[#2a2f45] text-slate-500 hover:bg-[#21253a] hover:text-slate-400 rounded text-[12px] font-medium cursor-pointer transition-colors"
+            onClick={logout}
+          >
+            Sign out
+          </button>
           {!techId && (
             <select
               className="px-2.5 py-[7px] border border-[#2a2f45] rounded text-[13px] bg-[#21253a] text-slate-200 focus:outline-none focus:border-blue-500 [color-scheme:dark]"

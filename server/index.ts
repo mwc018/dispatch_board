@@ -58,5 +58,5 @@ app.use((err: Error, req: Request, res: Response, _next: NextFunction) => {
   res.status(500).json({ error: 'Internal server error' });
 });
 
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 4001;
 server.listen(PORT, () => console.log(`Dispatch server running on http://localhost:${PORT}`));

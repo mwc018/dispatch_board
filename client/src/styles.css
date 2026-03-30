@@ -483,6 +483,123 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .color-swatch--active { border-color: #fff; box-shadow: 0 0 0 1px rgba(255,255,255,0.3); }
 
 /* ==============================
+   Login Page
+   ============================== */
+.login-page {
+  min-height: 100vh;
+  background: var(--color-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.login-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  box-shadow: var(--shadow-lg);
+  padding: 40px;
+  width: 100%;
+  max-width: 380px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+.login-card__logo { margin-bottom: 4px; }
+.login-card__title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--color-text);
+  letter-spacing: 0.01em;
+}
+.login-card__subtitle {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin-bottom: 8px;
+}
+.login-card__error {
+  width: 100%;
+  background: var(--color-danger-bg);
+  border: 1px solid var(--color-danger);
+  color: var(--color-danger);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  font-size: 13px;
+}
+.btn--msal {
+  width: 100%;
+  justify-content: center;
+  gap: 10px;
+  padding: 11px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  background: var(--color-surface-2);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  display: flex;
+  align-items: center;
+}
+.btn--msal:hover:not(:disabled) {
+  background: var(--color-border);
+  border-color: var(--color-border-hover);
+}
+.btn--msal:disabled { opacity: 0.5; cursor: not-allowed; }
+.login-card__dev { width: 100%; display: flex; flex-direction: column; gap: 10px; }
+.login-card__divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--color-text-muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.login-card__divider::before,
+.login-card__divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--color-border);
+}
+.btn--dev {
+  width: 100%;
+  justify-content: center;
+  padding: 9px 16px;
+  font-size: 13px;
+  background: transparent;
+  color: var(--color-text-muted);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  display: flex;
+  align-items: center;
+}
+.btn--dev:hover {
+  background: var(--color-surface-2);
+  color: var(--color-text-dim);
+  border-color: var(--color-border-hover);
+}
+
+/* Board header user display */
+.board-header__user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: 8px;
+  padding-left: 12px;
+  border-left: 1px solid var(--color-border);
+}
+.board-header__username {
+  font-size: 13px;
+  color: var(--color-text-dim);
+}
+
+/* ==============================
    Tech View
    ============================== */
 .tech-view {

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '../hooks/useAuth';
 import {
   DndContext,
   DragOverlay,
@@ -52,6 +53,7 @@ interface NotesModalState {
 }
 
 export default function ManagerBoard() {
+  const { user, logout } = useAuth();
   const today = new Date().toISOString().split('T')[0];
   const [date, setDate] = useState(today);
   const [board, setBoard] = useState<BoardState | null>(null);
@@ -255,6 +257,12 @@ export default function ManagerBoard() {
     <div className="manager-board">
       <div className="board-header">
         <h1 className="board-header__title">Dispatch Board</h1>
+          {user && (
+            <div className="board-header__user">
+              <span className="board-header__username">{user.name}</span>
+              <button className="btn btn--ghost btn--sm" onClick={logout}>Sign out</button>
+            </div>
+          )}
         <div className="board-header__controls">
           <input
             type="date"

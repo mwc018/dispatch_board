@@ -1,16 +1,21 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { getTechBoard, getTechnicians } from '../api/client';
 import { useSocket } from '../hooks/useSocket';
+import { TechBoardState, Technician } from '../types';
 
-export default function TechView({ techId: propTechId }) {
+interface TechViewProps {
+  techId?: string;
+}
+
+export default function TechView({ techId: propTechId }: TechViewProps) {
   const params = new URLSearchParams(window.location.search);
   const techId = propTechId || params.get('techId');
   const today = new Date().toISOString().split('T')[0];
   const [date, setDate] = useState(today);
-  const [data, setData] = useState(null);
+  const [data, setData] = useState<TechBoardState | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [techs, setTechs] = useState([]);
+  const [error, setError] = useState<string | null>(null);
+  const [techs, setTechs] = useState<Technician[]>([]);
   const [selectedTechId, setSelectedTechId] = useState(techId || '');
 
   const fetchData = useCallback(async () => {
@@ -19,7 +24,7 @@ export default function TechView({ techId: propTechId }) {
       const result = await getTechBoard(selectedTechId, date);
       setData(result);
       setError(null);
-    } catch (e) {
+    } catch {
       setError('Failed to load assignments');
     } finally {
       setLoading(false);
@@ -37,7 +42,7 @@ export default function TechView({ techId: propTechId }) {
 
   useSocket(date, () => fetchData(), () => fetchData());
 
-  const formatTime = (t) => {
+  const formatTime = (t: string | null): string | null => {
     if (!t) return null;
     const [h, m] = t.split(':');
     const hour = parseInt(h);

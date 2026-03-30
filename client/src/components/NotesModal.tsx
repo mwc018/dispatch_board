@@ -1,6 +1,13 @@
 import React, { useState, useEffect } from 'react';
 
-export default function NotesModal({ isOpen, initialNotes, onSave, onClose }) {
+interface NotesModalProps {
+  isOpen: boolean;
+  initialNotes?: string | null;
+  onSave: (notes: string | null) => void;
+  onClose: () => void;
+}
+
+export default function NotesModal({ isOpen, initialNotes, onSave, onClose }: NotesModalProps) {
   const [notes, setNotes] = useState(initialNotes || '');
 
   useEffect(() => {

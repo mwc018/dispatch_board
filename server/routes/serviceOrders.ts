@@ -1,15 +1,16 @@
-const express = require('express');
+import express, { Request, Response } from 'express';
+import db from '../db/database';
+
 const router = express.Router();
-const db = require('../db/database');
 
 // GET /api/service-orders
-router.get('/', (req, res) => {
+router.get('/', (req: Request, res: Response) => {
   const orders = db.prepare('SELECT * FROM service_orders ORDER BY created_at DESC').all();
   res.json(orders);
 });
 
 // POST /api/service-orders — manually create a service order
-router.post('/', (req, res) => {
+router.post('/', (req: Request, res: Response) => {
   const { zoho_id, subject, customer_name, address, description, phone } = req.body;
   if (!subject) return res.status(400).json({ error: 'subject is required' });
 
@@ -26,7 +27,7 @@ router.post('/', (req, res) => {
     const order = db.prepare('SELECT * FROM service_orders WHERE id = ?').get([result.lastInsertRowid]);
     req.app.get('io')?.emit('board:refresh');
     res.status(201).json(order);
-  } catch (err) {
+  } catch (err: any) {
     if (err.message.includes('UNIQUE')) {
       return res.status(409).json({ error: 'Service order with this Zoho ID already exists' });
     }
@@ -35,7 +36,7 @@ router.post('/', (req, res) => {
 });
 
 // PUT /api/service-orders/:id
-router.put('/:id', (req, res) => {
+router.put('/:id', (req: Request, res: Response) => {
   const { subject, customer_name, address, description, phone } = req.body;
   const order = db.prepare('SELECT * FROM service_orders WHERE id = ?').get([req.params.id]);
   if (!order) return res.status(404).json({ error: 'Not found' });
@@ -57,7 +58,7 @@ router.put('/:id', (req, res) => {
 });
 
 // DELETE /api/service-orders/:id
-router.delete('/:id', (req, res) => {
+router.delete('/:id', (req: Request, res: Response) => {
   const order = db.prepare('SELECT * FROM service_orders WHERE id = ?').get([req.params.id]);
   if (!order) return res.status(404).json({ error: 'Not found' });
   db.prepare('DELETE FROM service_orders WHERE id = ?').run([req.params.id]);
@@ -65,4 +66,4 @@ router.delete('/:id', (req, res) => {
   res.json({ success: true });
 });
 
-module.exports = router;
+export default router;

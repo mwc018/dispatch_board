@@ -1,6 +1,20 @@
 import React, { useState } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { DndCardItem } from '../types';
+
+interface ServiceOrderCardProps {
+  item: DndCardItem;
+  priority?: number;
+  scheduledTime?: string | null;
+  assignmentId?: number;
+  onSetTime?: (assignmentId: number | undefined, scheduledTime: string | null | undefined) => void;
+  onSetNotes?: (assignmentId: number | undefined, notes: string | null | undefined) => void;
+  onUnassign?: (id: number) => void;
+  onDelete?: (id: number) => void;
+  compact?: boolean;
+  notes?: string | null;
+}
 
 export default function ServiceOrderCard({
   item,
@@ -13,7 +27,7 @@ export default function ServiceOrderCard({
   onDelete,
   compact,
   notes,
-}) {
+}: ServiceOrderCardProps) {
   const [expanded, setExpanded] = useState(false);
 
   const {

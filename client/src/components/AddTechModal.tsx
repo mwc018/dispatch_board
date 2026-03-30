@@ -1,8 +1,15 @@
 import React, { useState } from 'react';
+import { AddTechData } from '../types';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
 
-export default function AddTechModal({ isOpen, onSave, onClose }) {
+interface AddTechModalProps {
+  isOpen: boolean;
+  onSave: (data: AddTechData) => void;
+  onClose: () => void;
+}
+
+export default function AddTechModal({ isOpen, onSave, onClose }: AddTechModalProps) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [color, setColor] = useState(COLORS[0]);

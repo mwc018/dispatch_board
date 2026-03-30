@@ -1,6 +1,14 @@
 import React, { useState, useEffect } from 'react';
 
-export default function TimeModal({ isOpen, initialTime, onSave, onClose, title }) {
+interface TimeModalProps {
+  isOpen: boolean;
+  initialTime?: string | null;
+  onSave: (time: string | null) => void;
+  onClose: () => void;
+  title?: string;
+}
+
+export default function TimeModal({ isOpen, initialTime, onSave, onClose, title }: TimeModalProps) {
   const [time, setTime] = useState(initialTime || '');
 
   useEffect(() => {

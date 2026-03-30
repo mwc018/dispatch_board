@@ -1,18 +1,14 @@
-const { Database } = require('node-sqlite3-wasm');
-const path = require('path');
-const fs = require('fs');
+import { Database } from 'node-sqlite3-wasm';
+import path from 'path';
+import fs from 'fs';
 
 const DB_PATH = path.join(__dirname, '..', 'data', 'dispatch.db');
-
-// Ensure data directory exists
 const dataDir = path.dirname(DB_PATH);
 if (!fs.existsSync(dataDir)) {
   fs.mkdirSync(dataDir, { recursive: true });
 }
 
-const db = new Database(DB_PATH);
-
-// Enable WAL mode for better concurrent read performance
+const db: any = new Database(DB_PATH);
 db.exec('PRAGMA journal_mode = WAL');
 db.exec('PRAGMA foreign_keys = ON');
 
@@ -66,7 +62,7 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_assignments_tech ON dispatch_assignments(technician_id, dispatch_date);
 `);
 
-// Migrations — safe to run repeatedly
+// Migrations
 try { db.exec('ALTER TABLE service_orders ADD COLUMN account_name TEXT'); } catch (_) {}
 
-module.exports = db;
+export default db;

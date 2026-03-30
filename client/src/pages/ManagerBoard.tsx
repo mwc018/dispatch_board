@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   DndContext,
   DragOverlay,
@@ -7,10 +7,12 @@ import {
   useSensors,
   pointerWithin,
   closestCorners,
+  DragStartEvent,
+  DragEndEvent,
 } from '@dnd-kit/core';
 
 // Use pointer position first, fall back to closest corners
-function collisionDetection(args) {
+function collisionDetection(args: Parameters<typeof pointerWithin>[0]) {
   const pointerHits = pointerWithin(args);
   if (pointerHits.length > 0) return pointerHits;
   return closestCorners(args);
@@ -37,27 +39,38 @@ import {
   deleteServiceOrder,
   addServiceOrder,
 } from '../api/client';
+import { BoardState, DndCardItem, AddTechData, AddOrderData, DispatchAssignment } from '../types';
+
+interface TimeModalState {
+  assignmentId: number;
+  currentTime: string | null;
+}
+
+interface NotesModalState {
+  assignmentId: number;
+  currentNotes: string | null;
+}
 
 export default function ManagerBoard() {
   const today = new Date().toISOString().split('T')[0];
   const [date, setDate] = useState(today);
-  const [board, setBoard] = useState(null);
+  const [board, setBoard] = useState<BoardState | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const [activeItem, setActiveItem] = useState(null);
-  const [timeModal, setTimeModal] = useState(null); // { assignmentId, currentTime }
-  const [notesModal, setNotesModal] = useState(null); // { assignmentId, currentNotes }
+  const [activeItem, setActiveItem] = useState<DndCardItem | null>(null);
+  const [timeModal, setTimeModal] = useState<TimeModalState | null>(null);
+  const [notesModal, setNotesModal] = useState<NotesModalState | null>(null);
   const [addTechOpen, setAddTechOpen] = useState(false);
   const [addOrderOpen, setAddOrderOpen] = useState(false);
-  const [newOrder, setNewOrder] = useState({ subject: '', customer_name: '', address: '', phone: '', description: '' });
+  const [newOrder, setNewOrder] = useState<AddOrderData>({ subject: '', customer_name: '', address: '', phone: '', description: '' });
 
   const fetchBoard = useCallback(async () => {
     try {
       const data = await getBoard(date);
       setBoard(data);
       setError(null);
-    } catch (e) {
+    } catch {
       setError('Failed to load board');
     } finally {
       setLoading(false);
@@ -80,7 +93,7 @@ export default function ManagerBoard() {
   );
 
   // Find the container (unassigned or tech id) for a given dnd item id
-  function findContainer(dndId) {
+  function findContainer(dndId: string): string | null {
     if (!board) return null;
     if (board.unassigned.some((o) => `so_${o.id}` === dndId)) return 'unassigned';
     for (const tech of board.technicians) {
@@ -89,29 +102,35 @@ export default function ManagerBoard() {
     return null;
   }
 
-  function handleDragStart(event) {
+  function handleDragStart(event: DragStartEvent) {
     const { active } = event;
-    const dndId = active.id;
+    const dndId = String(active.id);
     // Find the raw item
     const fromUnassigned = board?.unassigned.find((o) => `so_${o.id}` === dndId);
-    if (fromUnassigned) { setActiveItem({ ...fromUnassigned, dndId }); return; }
+    if (fromUnassigned) {
+      setActiveItem({ ...fromUnassigned, dndId });
+      return;
+    }
     for (const tech of board?.technicians || []) {
       const a = (tech.assignments || []).find((a) => `assign_${a.id}` === dndId);
-      if (a) { setActiveItem({ ...a, id: a.service_order_id, dndId }); return; }
+      if (a) {
+        setActiveItem({ ...a, id: a.service_order_id, dndId });
+        return;
+      }
     }
   }
 
-  async function handleDragEnd(event) {
+  async function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
     setActiveItem(null);
     if (!over || !board) return;
 
-    const activeDndId = active.id;
-    const overDndId = over.id;
+    const activeDndId = String(active.id);
+    const overDndId = String(over.id);
 
     const sourceContainer = findContainer(activeDndId);
     // over can be a container (droppable) or an item
-    let targetContainer = over.id; // e.g., 'unassigned', 'tech_3'
+    let targetContainer: string | null = overDndId; // e.g., 'unassigned', 'tech_3'
     if (!['unassigned'].concat(board.technicians.map((t) => `tech_${t.id}`)).includes(targetContainer)) {
       targetContainer = findContainer(overDndId);
     }
@@ -125,10 +144,10 @@ export default function ManagerBoard() {
         const fromIdx = board.unassigned.findIndex((o) => `so_${o.id}` === activeDndId);
         const toIdx = board.unassigned.findIndex((o) => `so_${o.id}` === overDndId);
         if (fromIdx === -1 || toIdx === -1 || fromIdx === toIdx) return;
-        const newOrder = arrayMove(ids, fromIdx, toIdx);
+        const newOrderedIds = arrayMove(ids, fromIdx, toIdx);
         // Optimistic update
-        setBoard((b) => ({ ...b, unassigned: arrayMove(b.unassigned, fromIdx, toIdx) }));
-        await reorderUnassigned(newOrder, date);
+        setBoard((b) => b ? { ...b, unassigned: arrayMove(b.unassigned, fromIdx, toIdx) } : b);
+        await reorderUnassigned(newOrderedIds, date);
       } else {
         const techId = parseInt(sourceContainer.replace('tech_', ''));
         const tech = board.technicians.find((t) => t.id === techId);
@@ -138,12 +157,12 @@ export default function ManagerBoard() {
         if (fromIdx === -1 || toIdx === -1 || fromIdx === toIdx) return;
         const newAssignments = arrayMove(assignments, fromIdx, toIdx);
         // Optimistic update
-        setBoard((b) => ({
+        setBoard((b) => b ? ({
           ...b,
           technicians: b.technicians.map((t) =>
             t.id === techId ? { ...t, assignments: newAssignments } : t
           ),
-        }));
+        }) : b);
         await reorderTech(techId, date, newAssignments.map((a) => a.id));
       }
       return;
@@ -172,42 +191,46 @@ export default function ManagerBoard() {
     }
   }
 
-  function findAssignmentByDndId(dndId) {
+  function findAssignmentByDndId(dndId: string): DispatchAssignment | undefined {
     for (const tech of board?.technicians || []) {
       const a = (tech.assignments || []).find((a) => `assign_${a.id}` === dndId);
       if (a) return a;
     }
-    return null;
+    return undefined;
   }
 
-  const handleSetTime = (assignmentId, currentTime) => {
-    setTimeModal({ assignmentId, currentTime });
+  const handleSetTime = (assignmentId: number | undefined, currentTime: string | null | undefined) => {
+    if (assignmentId === undefined) return;
+    setTimeModal({ assignmentId, currentTime: currentTime ?? null });
   };
 
-  const handleTimeSave = async (newTime) => {
+  const handleTimeSave = async (newTime: string | null) => {
+    if (!timeModal) return;
     await setTime(timeModal.assignmentId, newTime, date);
     setTimeModal(null);
   };
 
-  const handleSetNotes = (assignmentId, currentNotes) => {
-    setNotesModal({ assignmentId, currentNotes });
+  const handleSetNotes = (assignmentId: number | undefined, currentNotes: string | null | undefined) => {
+    if (assignmentId === undefined) return;
+    setNotesModal({ assignmentId, currentNotes: currentNotes ?? null });
   };
 
-  const handleNotesSave = async (newNotes) => {
+  const handleNotesSave = async (newNotes: string | null) => {
+    if (!notesModal) return;
     await setNotes(notesModal.assignmentId, newNotes, date);
     setNotesModal(null);
   };
 
-  const handleUnassign = async (serviceOrderId) => {
+  const handleUnassign = async (serviceOrderId: number) => {
     await unassignOrder(serviceOrderId, date);
   };
 
-  const handleDelete = async (serviceOrderId) => {
+  const handleDelete = async (serviceOrderId: number) => {
     if (!confirm('Remove this service order from the board?')) return;
     await deleteServiceOrder(serviceOrderId);
   };
 
-  const handleAddTech = async (data) => {
+  const handleAddTech = async (data: AddTechData) => {
     await addTechnician(data);
     setAddTechOpen(false);
   };
@@ -313,7 +336,7 @@ export default function ManagerBoard() {
               <button className="modal__close" onClick={() => setAddOrderOpen(false)}>✕</button>
             </div>
             <div className="modal__body">
-              {['subject', 'customer_name', 'address', 'phone', 'description'].map((field) => (
+              {(['subject', 'customer_name', 'address', 'phone', 'description'] as const).map((field) => (
                 <label key={field} className="modal__label">
                   {field.replace('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
                   {field === 'description'

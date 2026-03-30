@@ -1,9 +1,11 @@
-const express = require('express');
-const router = express.Router();
-const db = require('../db/database');
-const { updateServiceOrderAssignment } = require('../services/zoho');
+import express, { Request, Response } from 'express';
+import db from '../db/database';
+import { updateServiceOrderAssignment } from '../services/zoho';
+import { BoardState, TechWithAssignments } from '../types';
 
-function getBoardState(date) {
+const router = express.Router();
+
+function getBoardState(date?: string): BoardState {
   const today = date || new Date().toISOString().split('T')[0];
 
   const unassigned = db.prepare(`
@@ -13,11 +15,11 @@ function getBoardState(date) {
     ORDER BY uo.position ASC
   `).all();
 
-  const technicians = db.prepare('SELECT * FROM technicians WHERE is_active = 1 ORDER BY name ASC').all();
+  const technicians: TechWithAssignments[] = db.prepare('SELECT * FROM technicians WHERE is_active = 1 ORDER BY name ASC').all();
 
   for (const tech of technicians) {
     tech.assignments = db.prepare(`
-      SELECT da.*, so.zoho_id, so.subject, so.customer_name, so.address, so.description, so.phone, so.status
+      SELECT da.*, so.zoho_id, so.subject, so.account_name, so.customer_name, so.address, so.description, so.phone, so.status
       FROM dispatch_assignments da
       JOIN service_orders so ON so.id = da.service_order_id
       WHERE da.technician_id = ? AND da.dispatch_date = ?
@@ -28,13 +30,13 @@ function getBoardState(date) {
   return { date: today, unassigned, technicians };
 }
 
-router.get('/board', (req, res) => {
-  const date = req.query.date || new Date().toISOString().split('T')[0];
+router.get('/board', (req: Request, res: Response) => {
+  const date = (req.query.date as string) || new Date().toISOString().split('T')[0];
   res.json(getBoardState(date));
 });
 
-router.get('/board/tech/:techId', (req, res) => {
-  const date = req.query.date || new Date().toISOString().split('T')[0];
+router.get('/board/tech/:techId', (req: Request, res: Response) => {
+  const date = (req.query.date as string) || new Date().toISOString().split('T')[0];
   const tech = db.prepare('SELECT * FROM technicians WHERE id = ?').get([req.params.techId]);
   if (!tech) return res.status(404).json({ error: 'Technician not found' });
 
@@ -49,7 +51,7 @@ router.get('/board/tech/:techId', (req, res) => {
   res.json({ tech, date, assignments });
 });
 
-router.post('/assign', (req, res) => {
+router.post('/assign', async (req: Request, res: Response) => {
   const { service_order_id, technician_id, priority, scheduled_time, date, notes } = req.body;
   if (!service_order_id || !technician_id) {
     return res.status(400).json({ error: 'service_order_id and technician_id are required' });
@@ -98,7 +100,7 @@ router.post('/assign', (req, res) => {
   res.json(board);
 });
 
-router.post('/unassign', (req, res) => {
+router.post('/unassign', async (req: Request, res: Response) => {
   const { service_order_id, date } = req.body;
   if (!service_order_id) return res.status(400).json({ error: 'service_order_id is required' });
 
@@ -125,14 +127,14 @@ router.post('/unassign', (req, res) => {
   res.json(board);
 });
 
-router.post('/reorder-unassigned', (req, res) => {
+router.post('/reorder-unassigned', (req: Request, res: Response) => {
   const { ordered_ids } = req.body;
   if (!Array.isArray(ordered_ids)) return res.status(400).json({ error: 'ordered_ids must be an array' });
 
   const update = db.prepare('UPDATE unassigned_order SET position = ? WHERE service_order_id = ?');
   db.exec('BEGIN');
   try {
-    ordered_ids.forEach((id, index) => update.run([index, id]));
+    ordered_ids.forEach((id: number, index: number) => update.run([index, id]));
     db.exec('COMMIT');
   } catch (e) {
     db.exec('ROLLBACK');
@@ -144,7 +146,7 @@ router.post('/reorder-unassigned', (req, res) => {
   res.json(board);
 });
 
-router.post('/reorder-tech', (req, res) => {
+router.post('/reorder-tech', async (req: Request, res: Response) => {
   const { technician_id, date, ordered_assignment_ids } = req.body;
   if (!technician_id || !Array.isArray(ordered_assignment_ids)) {
     return res.status(400).json({ error: 'technician_id and ordered_assignment_ids are required' });
@@ -154,7 +156,7 @@ router.post('/reorder-tech', (req, res) => {
   const update = db.prepare("UPDATE dispatch_assignments SET priority = ?, updated_at = datetime('now') WHERE id = ?");
   db.exec('BEGIN');
   try {
-    ordered_assignment_ids.forEach((id, index) => update.run([index + 1, id]));
+    ordered_assignment_ids.forEach((id: number, index: number) => update.run([index + 1, id]));
     db.exec('COMMIT');
   } catch (e) {
     db.exec('ROLLBACK');
@@ -171,7 +173,7 @@ router.post('/reorder-tech', (req, res) => {
   res.json(board);
 });
 
-router.post('/set-time', (req, res) => {
+router.post('/set-time', async (req: Request, res: Response) => {
   const { assignment_id, scheduled_time, date } = req.body;
   if (!assignment_id) return res.status(400).json({ error: 'assignment_id is required' });
 
@@ -188,7 +190,7 @@ router.post('/set-time', (req, res) => {
   res.json(board);
 });
 
-router.post('/set-notes', (req, res) => {
+router.post('/set-notes', (req: Request, res: Response) => {
   const { assignment_id, notes, date } = req.body;
   if (!assignment_id) return res.status(400).json({ error: 'assignment_id is required' });
 
@@ -203,8 +205,8 @@ router.post('/set-notes', (req, res) => {
   res.json(board);
 });
 
-function repackUnassigned() {
-  const rows = db.prepare('SELECT service_order_id FROM unassigned_order ORDER BY position ASC').all();
+function repackUnassigned(): void {
+  const rows: any[] = db.prepare('SELECT service_order_id FROM unassigned_order ORDER BY position ASC').all();
   const update = db.prepare('UPDATE unassigned_order SET position = ? WHERE service_order_id = ?');
   db.exec('BEGIN');
   try {
@@ -216,4 +218,4 @@ function repackUnassigned() {
   }
 }
 
-module.exports = router;
+export default router;

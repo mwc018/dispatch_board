@@ -1,21 +1,12 @@
-const express = require('express');
+import express, { Request, Response } from 'express';
+import db from '../db/database';
+
 const router = express.Router();
-const db = require('../db/database');
 
-// Stores the last raw payload received — for debugging field names
-let lastPayload = null;
-
-router.get('/zoho/last', (req, res) => {
-  res.json(lastPayload || { message: 'No webhook received yet' });
-});
-
-router.post('/zoho', (req, res) => {
+router.post('/zoho', (req: Request, res: Response) => {
   try {
     const payload = req.body;
-    lastPayload = payload;
-    console.log('[Webhook] Received:', JSON.stringify(payload, null, 2));
-    const records = Array.isArray(payload) ? payload : payload.data || [payload];
-
+    const records: any[] = Array.isArray(payload) ? payload : payload.data || [payload];
     let created = 0;
     let updated = 0;
 
@@ -36,21 +27,16 @@ router.post('/zoho', (req, res) => {
       const existing = db.prepare('SELECT id FROM service_orders WHERE zoho_id = ?').get([String(zohoId)]);
 
       if (existing) {
-        db.prepare(`
-          UPDATE service_orders
-          SET subject = ?, account_name = ?, customer_name = ?, address = ?, description = ?, phone = ?, updated_at = datetime('now')
-          WHERE zoho_id = ?
-        `).run([subject, accountName, customerName, address, description, phone, String(zohoId)]);
+        db.prepare(
+          `UPDATE service_orders SET subject = ?, account_name = ?, customer_name = ?, address = ?, description = ?, phone = ?, updated_at = datetime('now') WHERE zoho_id = ?`
+        ).run([subject, accountName, customerName, address, description, phone, String(zohoId)]);
         updated++;
       } else {
-        const result = db.prepare(`
-          INSERT INTO service_orders (zoho_id, subject, account_name, customer_name, address, description, phone, status)
-          VALUES (?, ?, ?, ?, ?, ?, ?, 'unassigned')
-        `).run([String(zohoId), subject, accountName, customerName, address, description, phone]);
-
+        const result = db.prepare(
+          `INSERT INTO service_orders (zoho_id, subject, account_name, customer_name, address, description, phone, status) VALUES (?, ?, ?, ?, ?, ?, ?, 'unassigned')`
+        ).run([String(zohoId), subject, accountName, customerName, address, description, phone]);
         const maxPos = db.prepare('SELECT COALESCE(MAX(position), -1) as m FROM unassigned_order').get();
-        db.prepare('INSERT OR IGNORE INTO unassigned_order (service_order_id, position) VALUES (?, ?)')
-          .run([result.lastInsertRowid, maxPos.m + 1]);
+        db.prepare('INSERT OR IGNORE INTO unassigned_order (service_order_id, position) VALUES (?, ?)').run([result.lastInsertRowid, maxPos.m + 1]);
         created++;
       }
     }
@@ -63,4 +49,4 @@ router.post('/zoho', (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

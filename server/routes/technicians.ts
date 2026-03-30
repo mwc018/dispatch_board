@@ -1,14 +1,15 @@
-const express = require('express');
-const router = express.Router();
-const db = require('../db/database');
-const { fetchCRMUsers } = require('../services/zoho');
+import express, { Request, Response } from 'express';
+import db from '../db/database';
+import { fetchCRMUsers } from '../services/zoho';
 
-router.get('/', (req, res) => {
+const router = express.Router();
+
+router.get('/', (req: Request, res: Response) => {
   const techs = db.prepare('SELECT * FROM technicians ORDER BY name ASC').all();
   res.json(techs);
 });
 
-router.post('/', (req, res) => {
+router.post('/', (req: Request, res: Response) => {
   const { zoho_user_id, name, email, color } = req.body;
   if (!name) return res.status(400).json({ error: 'name is required' });
 
@@ -21,7 +22,7 @@ router.post('/', (req, res) => {
     const tech = db.prepare('SELECT * FROM technicians WHERE id = ?').get([result.lastInsertRowid]);
     req.app.get('io')?.emit('board:refresh');
     res.status(201).json(tech);
-  } catch (err) {
+  } catch (err: any) {
     if (err.message.includes('UNIQUE')) {
       return res.status(409).json({ error: 'Technician already exists' });
     }
@@ -29,7 +30,7 @@ router.post('/', (req, res) => {
   }
 });
 
-router.put('/:id', (req, res) => {
+router.put('/:id', (req: Request, res: Response) => {
   const { name, email, color, is_active } = req.body;
   const tech = db.prepare('SELECT * FROM technicians WHERE id = ?').get([req.params.id]);
   if (!tech) return res.status(404).json({ error: 'Not found' });
@@ -48,7 +49,7 @@ router.put('/:id', (req, res) => {
   res.json(updated);
 });
 
-router.delete('/:id', (req, res) => {
+router.delete('/:id', (req: Request, res: Response) => {
   const tech = db.prepare('SELECT * FROM technicians WHERE id = ?').get([req.params.id]);
   if (!tech) return res.status(404).json({ error: 'Not found' });
 
@@ -64,7 +65,7 @@ router.delete('/:id', (req, res) => {
   res.json({ success: true });
 });
 
-router.post('/sync-zoho', async (req, res) => {
+router.post('/sync-zoho', async (req: Request, res: Response) => {
   try {
     const users = await fetchCRMUsers();
     let added = 0;
@@ -78,9 +79,9 @@ router.post('/sync-zoho', async (req, res) => {
     }
     req.app.get('io')?.emit('board:refresh');
     res.json({ success: true, added, total: users.length });
-  } catch (err) {
+  } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
 });
 
-module.exports = router;
+export default router;

@@ -2,8 +2,14 @@ import React from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import ServiceOrderCard from './ServiceOrderCard';
+import { ServiceOrder } from '../types';
 
-export default function UnassignedQueue({ orders, onDelete }) {
+interface UnassignedQueueProps {
+  orders: ServiceOrder[];
+  onDelete: (id: number) => void;
+}
+
+export default function UnassignedQueue({ orders, onDelete }: UnassignedQueueProps) {
   const { setNodeRef, isOver } = useDroppable({ id: 'unassigned' });
 
   const items = orders.map((o) => ({ ...o, dndId: `so_${o.id}` }));

@@ -5,8 +5,8 @@ export interface DevUser {
   username: string;
 }
 
-export const devLogin = (): void => {
-  sessionStorage.setItem(DEV_AUTH_KEY, JSON.stringify({ name: 'Dev User', username: 'dev@local' }));
+export const devLogin = (name = 'Dev User', username = 'dev@local'): void => {
+  sessionStorage.setItem(DEV_AUTH_KEY, JSON.stringify({ name, username }));
 };
 
 export const devLogout = (): void => {

@@ -1,12 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { devLogin } from '../auth/devAuth';
+import { getTechnicians } from '../api/client';
+import { Technician } from '../types';
 
 export default function LoginPage() {
   const { login } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [techs, setTechs] = useState<Technician[]>([]);
+  const [selectedTechId, setSelectedTechId] = useState<string>('');
   const isDev = import.meta.env.DEV;
+
+  useEffect(() => {
+    if (isDev) {
+      getTechnicians().then(setTechs).catch(() => {});
+    }
+  }, [isDev]);
 
   const handleMsalLogin = async () => {
     setLoading(true);
@@ -23,6 +33,13 @@ export default function LoginPage() {
 
   const handleDevLogin = () => {
     devLogin();
+    window.location.reload();
+  };
+
+  const handleDevTechLogin = () => {
+    const tech = techs.find((t) => String(t.id) === selectedTechId);
+    if (!tech || !tech.email) return;
+    devLogin(tech.name, tech.email);
     window.location.reload();
   };
 
@@ -71,12 +88,35 @@ export default function LoginPage() {
               <span>development only</span>
               <span className="flex-1 h-px bg-[#2a2f45]" />
             </div>
+
             <button
               className="w-full flex items-center justify-center px-4 py-[9px] text-[13px] bg-transparent text-slate-500 border border-dashed border-[#2a2f45] rounded cursor-pointer transition-colors hover:bg-[#21253a] hover:text-slate-400 hover:border-[#3a4060]"
               onClick={handleDevLogin}
             >
-              Dev Login (bypass auth)
+              Dev Login (manager)
             </button>
+
+            {techs.length > 0 && (
+              <div className="flex gap-2">
+                <select
+                  className="flex-1 px-2.5 py-[9px] text-[13px] bg-[#21253a] text-slate-400 border border-dashed border-[#2a2f45] rounded focus:outline-none focus:border-blue-500 [color-scheme:dark]"
+                  value={selectedTechId}
+                  onChange={(e) => setSelectedTechId(e.target.value)}
+                >
+                  <option value="">Login as tech...</option>
+                  {techs.map((t) => (
+                    <option key={t.id} value={t.id}>{t.name}</option>
+                  ))}
+                </select>
+                <button
+                  className="px-3 py-[9px] text-[13px] bg-transparent text-slate-500 border border-dashed border-[#2a2f45] rounded cursor-pointer transition-colors hover:bg-[#21253a] hover:text-slate-400 hover:border-[#3a4060] disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+                  onClick={handleDevTechLogin}
+                  disabled={!selectedTechId}
+                >
+                  Go →
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>

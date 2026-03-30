@@ -84,4 +84,26 @@ router.post('/sync-zoho', async (req: Request, res: Response) => {
   }
 });
 
+// Resolve role for a logged-in user by email
+router.get('/me', (req: Request, res: Response) => {
+  const email = (req.query.email as string || '').toLowerCase().trim();
+  if (!email) return res.status(400).json({ error: 'email is required' });
+
+  const managerEmails = (process.env.MANAGER_EMAILS || '')
+    .split(',')
+    .map((e) => e.toLowerCase().trim())
+    .filter(Boolean);
+
+  if (managerEmails.includes(email)) {
+    return res.json({ role: 'manager' });
+  }
+
+  const tech = db.prepare('SELECT * FROM technicians WHERE lower(email) = ?').get([email]) as any;
+  if (tech) {
+    return res.json({ role: 'tech', techId: tech.id, name: tech.name });
+  }
+
+  return res.json({ role: 'denied' });
+});
+
 export default router;

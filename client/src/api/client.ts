@@ -58,4 +58,12 @@ export const addServiceOrder = (data: AddOrderData): Promise<ServiceOrder> =>
 export const deleteServiceOrder = (id: number): Promise<{ success: boolean }> =>
   api.delete(`/service-orders/${id}`).then((r) => r.data);
 
+export type UserRole =
+  | { role: 'manager' }
+  | { role: 'tech'; techId: number; name: string }
+  | { role: 'denied' };
+
+export const resolveUserRole = (email: string): Promise<UserRole> =>
+  api.get('/technicians/me', { params: { email } }).then((r) => r.data);
+
 export default api;

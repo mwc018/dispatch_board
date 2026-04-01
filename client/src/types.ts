@@ -31,6 +31,7 @@ export interface DispatchAssignment {
   scheduled_time: string | null;
   dispatch_date: string;
   notes: string | null;
+  time_worked: number | null;
   zoho_id: string;
   subject: string;
   account_name: string | null;

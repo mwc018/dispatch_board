@@ -64,6 +64,7 @@ db.exec(`
 
 // Migrations
 try { db.exec('ALTER TABLE service_orders ADD COLUMN account_name TEXT'); } catch (_) {}
+try { db.exec('ALTER TABLE dispatch_assignments ADD COLUMN time_worked INTEGER DEFAULT 0'); } catch (_) {}
 
 // Migration: drop unique constraint on service_order_id+dispatch_date to allow multi-assign
 try {

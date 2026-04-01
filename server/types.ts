@@ -31,6 +31,7 @@ export interface DispatchAssignment {
   scheduled_time: string | null;
   dispatch_date: string;
   notes: string | null;
+  time_worked: number | null;
   created_at: string;
   updated_at: string;
 }

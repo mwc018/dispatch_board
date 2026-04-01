@@ -40,6 +40,12 @@ export const setTime = (assignment_id: number, scheduled_time: string | null, da
 export const setNotes = (assignment_id: number, notes: string | null, date: string): Promise<BoardState> =>
   api.post('/dispatch/set-notes', { assignment_id, notes, date }).then((r) => r.data);
 
+export const setTimeWorked = (assignment_id: number, time_worked: number, date: string): Promise<BoardState> =>
+  api.post('/dispatch/set-time-worked', { assignment_id, time_worked, date }).then((r) => r.data);
+
+export const completeAssignment = (assignment_id: number, date: string): Promise<BoardState> =>
+  api.post('/dispatch/complete', { assignment_id, date }).then((r) => r.data);
+
 export const getTechnicians = (): Promise<Technician[]> =>
   api.get('/technicians').then((r) => r.data);
 

@@ -261,15 +261,20 @@ router.post('/set-time-worked', (req: Request, res: Response) => {
   const { assignment_id, time_worked, date } = req.body;
   if (!assignment_id) return res.status(400).json({ error: 'assignment_id is required' });
 
-  const assignment = db.prepare('SELECT * FROM dispatch_assignments WHERE id = ?').get([assignment_id]);
-  if (!assignment) return res.status(404).json({ error: 'Assignment not found' });
+  try {
+    const assignment = db.prepare('SELECT * FROM dispatch_assignments WHERE id = ?').get([assignment_id]);
+    if (!assignment) return res.status(404).json({ error: 'Assignment not found' });
 
-  db.prepare("UPDATE dispatch_assignments SET time_worked = ?, updated_at = datetime('now') WHERE id = ?")
-    .run([time_worked || 0, assignment_id]);
+    db.prepare("UPDATE dispatch_assignments SET time_worked = ?, updated_at = datetime('now') WHERE id = ?")
+      .run([time_worked || 0, assignment_id]);
 
-  const board = getBoardState(date || assignment.dispatch_date);
-  req.app.get('io')?.emit('board:updated', board);
-  res.json(board);
+    const board = getBoardState(date || assignment.dispatch_date);
+    req.app.get('io')?.emit('board:updated', board);
+    res.json(board);
+  } catch (err: any) {
+    console.error('[set-time-worked] error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 router.post('/complete', async (req: Request, res: Response) => {

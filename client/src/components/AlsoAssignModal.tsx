@@ -9,11 +9,15 @@ interface AlsoAssignModalProps {
 }
 
 export default function AlsoAssignModal({ isOpen, onClose, onAssign, availableTechs }: AlsoAssignModalProps) {
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-black/65 flex items-center justify-center z-50 backdrop-blur-sm" onClick={onClose}>
-      <div className="bg-[#1a1d27] border border-[#2a2f45] rounded-lg shadow-2xl w-72" onClick={(e) => e.stopPropagation()}>
+    <div
+      className={`fixed inset-0 bg-black/65 flex items-center justify-center z-50 backdrop-blur-sm transition-opacity duration-200 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+      onClick={onClose}
+    >
+      <div
+        className={`bg-[#1a1d27] border border-[#2a2f45] rounded-lg shadow-2xl w-72 transition-all duration-200 ${isOpen ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-2'}`}
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="flex items-center justify-between px-[18px] py-3.5 border-b border-[#2a2f45]">
           <h3 className="text-[15px] font-semibold text-slate-200">Also assign to...</h3>
           <button

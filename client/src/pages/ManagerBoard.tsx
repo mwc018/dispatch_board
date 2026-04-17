@@ -28,6 +28,7 @@ import NotesModal from '../components/NotesModal';
 import AddTechModal from '../components/AddTechModal';
 import AlsoAssignModal from '../components/AlsoAssignModal';
 import { useSocket } from '../hooks/useSocket';
+import { useToast } from '../components/Toast';
 import {
   getBoard,
   assignOrder,
@@ -56,6 +57,7 @@ interface NotesModalState {
 
 export default function ManagerBoard() {
   const { user, logout } = useAuth();
+  const toast = useToast();
   const today = new Date().toISOString().split('T')[0];
   const [date, setDate] = useState(today);
   const [board, setBoard] = useState<BoardState | null>(null);
@@ -69,6 +71,8 @@ export default function ManagerBoard() {
   const [addOrderOpen, setAddOrderOpen] = useState(false);
   const [alsoAssignModal, setAlsoAssignModal] = useState<{ serviceOrderId: number; currentTechId: number } | null>(null);
   const [newOrder, setNewOrder] = useState<AddOrderData>({ subject: '', customer_name: '', address: '', phone: '', description: '' });
+  const [recentlyDroppedSoId, setRecentlyDroppedSoId] = useState<number | null>(null);
+  const [socketFlash, setSocketFlash] = useState(false);
 
   const fetchBoard = useCallback(async () => {
     try {
@@ -89,7 +93,11 @@ export default function ManagerBoard() {
 
   useSocket(
     date,
-    (updatedBoard) => setBoard(updatedBoard),
+    (updatedBoard) => {
+      setBoard(updatedBoard);
+      setSocketFlash(true);
+      setTimeout(() => setSocketFlash(false), 2000);
+    },
     () => fetchBoard()
   );
 
@@ -97,7 +105,6 @@ export default function ManagerBoard() {
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
   );
 
-  // Find the container (unassigned or tech id) for a given dnd item id
   function findContainer(dndId: string): string | null {
     if (!board) return null;
     if (board.unassigned.some((o) => `so_${o.id}` === dndId)) return 'unassigned';
@@ -110,7 +117,6 @@ export default function ManagerBoard() {
   function handleDragStart(event: DragStartEvent) {
     const { active } = event;
     const dndId = String(active.id);
-    // Find the raw item
     const fromUnassigned = board?.unassigned.find((o) => `so_${o.id}` === dndId);
     if (fromUnassigned) {
       setActiveItem({ ...fromUnassigned, dndId });
@@ -134,15 +140,13 @@ export default function ManagerBoard() {
     const overDndId = String(over.id);
 
     const sourceContainer = findContainer(activeDndId);
-    // over can be a container (droppable) or an item
-    let targetContainer: string | null = overDndId; // e.g., 'unassigned', 'tech_3'
+    let targetContainer: string | null = overDndId;
     if (!['unassigned'].concat(board.technicians.map((t) => `tech_${t.id}`)).includes(targetContainer)) {
       targetContainer = findContainer(overDndId);
     }
 
     if (!sourceContainer || !targetContainer) return;
 
-    // --- Same container reorder ---
     if (sourceContainer === targetContainer) {
       if (sourceContainer === 'unassigned') {
         const ids = board.unassigned.map((o) => o.id);
@@ -150,7 +154,6 @@ export default function ManagerBoard() {
         const toIdx = board.unassigned.findIndex((o) => `so_${o.id}` === overDndId);
         if (fromIdx === -1 || toIdx === -1 || fromIdx === toIdx) return;
         const newOrderedIds = arrayMove(ids, fromIdx, toIdx);
-        // Optimistic update
         setBoard((b) => b ? { ...b, unassigned: arrayMove(b.unassigned, fromIdx, toIdx) } : b);
         await reorderUnassigned(newOrderedIds, date);
       } else {
@@ -161,7 +164,6 @@ export default function ManagerBoard() {
         const toIdx = assignments.findIndex((a) => `assign_${a.id}` === overDndId);
         if (fromIdx === -1 || toIdx === -1 || fromIdx === toIdx) return;
         const newAssignments = arrayMove(assignments, fromIdx, toIdx);
-        // Optimistic update
         setBoard((b) => b ? ({
           ...b,
           technicians: b.technicians.map((t) =>
@@ -173,31 +175,32 @@ export default function ManagerBoard() {
       return;
     }
 
-    // --- Cross-container move ---
-    // Moving from unassigned → tech
     if (sourceContainer === 'unassigned' && targetContainer.startsWith('tech_')) {
       const techId = parseInt(targetContainer.replace('tech_', ''));
       const order = board.unassigned.find((o) => `so_${o.id}` === activeDndId);
       if (!order) return;
       await assignOrder({ service_order_id: order.id, technician_id: techId, date });
+      setRecentlyDroppedSoId(order.id);
+      setTimeout(() => setRecentlyDroppedSoId(null), 1500);
     }
 
-    // Moving from tech → unassigned
     if (sourceContainer.startsWith('tech_') && targetContainer === 'unassigned') {
       const assignment = findAssignmentByDndId(activeDndId);
       if (!assignment) return;
-      // Find where in the queue the item was dropped
       const dropIdx = board.unassigned.findIndex((o) => `so_${o.id}` === overDndId);
       const position = dropIdx >= 0 ? dropIdx : undefined;
       const sourceTechId = parseInt(sourceContainer.replace('tech_', ''));
       await unassignOrder(assignment.service_order_id, date, position, sourceTechId);
     }
 
-    // Moving from tech → different tech
     if (sourceContainer.startsWith('tech_') && targetContainer.startsWith('tech_') && sourceContainer !== targetContainer) {
       const targetTechId = parseInt(targetContainer.replace('tech_', ''));
       const assignment = findAssignmentByDndId(activeDndId);
-      if (assignment) await assignOrder({ service_order_id: assignment.service_order_id, technician_id: targetTechId, date });
+      if (assignment) {
+        await assignOrder({ service_order_id: assignment.service_order_id, technician_id: targetTechId, date });
+        setRecentlyDroppedSoId(assignment.service_order_id);
+        setTimeout(() => setRecentlyDroppedSoId(null), 1500);
+      }
     }
   }
 
@@ -218,6 +221,7 @@ export default function ManagerBoard() {
     if (!timeModal) return;
     await setTime(timeModal.assignmentId, newTime, date);
     setTimeModal(null);
+    toast.success(newTime ? 'Time updated' : 'Time cleared');
   };
 
   const handleSetNotes = (assignmentId: number | undefined, currentNotes: string | null | undefined) => {
@@ -229,6 +233,7 @@ export default function ManagerBoard() {
     if (!notesModal) return;
     await setNotes(notesModal.assignmentId, newNotes, date);
     setNotesModal(null);
+    toast.success('Notes saved');
   };
 
   const handleUnassign = async (serviceOrderId: number, techId: number) => {
@@ -243,21 +248,25 @@ export default function ManagerBoard() {
     if (!alsoAssignModal) return;
     await alsoAssign(alsoAssignModal.serviceOrderId, targetTechId, date);
     setAlsoAssignModal(null);
+    toast.success('Job assigned to additional tech');
   };
 
   const handleDelete = async (serviceOrderId: number) => {
-    if (!confirm('Remove this service order from the board?')) return;
-    await deleteServiceOrder(serviceOrderId);
+    toast.confirm('Remove this service order from the board?', async () => {
+      await deleteServiceOrder(serviceOrderId);
+      toast.success('Service order removed');
+    });
   };
 
   const handleAddTech = async (data: AddTechData) => {
     await addTechnician(data);
     setAddTechOpen(false);
+    toast.success('Technician added');
   };
 
   const handleSyncZoho = async () => {
     const result = await syncZohoTechs();
-    alert(`Synced ${result.added} new technicians from Zoho.`);
+    toast.success(`Synced ${result.added} new technicians from Zoho`);
   };
 
   const handleAddOrder = async () => {
@@ -265,6 +274,7 @@ export default function ManagerBoard() {
     await addServiceOrder(newOrder);
     setNewOrder({ subject: '', customer_name: '', address: '', phone: '', description: '' });
     setAddOrderOpen(false);
+    toast.success('Service order added');
   };
 
   if (loading) return (
@@ -283,7 +293,12 @@ export default function ManagerBoard() {
     <div className="flex flex-col h-screen bg-[#0f1117] overflow-hidden">
       {/* Board Header */}
       <div className="flex items-center justify-between px-4 py-2.5 bg-[#1a1d27] border-b border-[#2a2f45] flex-shrink-0">
-        <h1 className="text-base font-bold text-slate-200 tracking-wide">Dispatch Board</h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-base font-bold text-slate-200 tracking-wide">Dispatch Board</h1>
+          {socketFlash && (
+            <span className="text-[11px] text-blue-400 animate-pulse">● Updated</span>
+          )}
+        </div>
         {user && (
           <div className="flex items-center gap-2.5 ml-2 pl-3 border-l border-[#2a2f45]">
             <span className="text-[13px] text-slate-400">{user.name}</span>
@@ -346,6 +361,7 @@ export default function ManagerBoard() {
                 onSetNotes={handleSetNotes}
                 onUnassign={handleUnassign}
                 onAlsoAssign={handleAlsoAssign}
+                highlightedSoId={recentlyDroppedSoId}
               />
             ))}
             {board.technicians.length === 0 && (
@@ -358,7 +374,9 @@ export default function ManagerBoard() {
 
         <DragOverlay>
           {activeItem && (
-            <ServiceOrderCard item={activeItem} compact />
+            <div style={{ transform: 'rotate(2deg) scale(1.05)', transformOrigin: 'top left' }}>
+              <ServiceOrderCard item={activeItem} compact />
+            </div>
           )}
         </DragOverlay>
       </DndContext>
@@ -394,57 +412,62 @@ export default function ManagerBoard() {
         }
       />
 
-      {addOrderOpen && (
-        <div className="fixed inset-0 bg-black/65 flex items-center justify-center z-50 backdrop-blur-sm" onClick={() => setAddOrderOpen(false)}>
-          <div className="bg-[#1a1d27] border border-[#2a2f45] rounded-lg shadow-2xl min-w-80 max-w-md w-full" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-[18px] py-3.5 border-b border-[#2a2f45]">
-              <h3 className="text-[15px] font-semibold text-slate-200">Add Service Order</h3>
-              <button
-                className="bg-none border-none text-[15px] cursor-pointer text-slate-500 px-1.5 py-0.5 rounded hover:bg-[#21253a] hover:text-slate-200 transition-colors"
-                onClick={() => setAddOrderOpen(false)}
-              >
-                ✕
-              </button>
-            </div>
-            <div className="px-[18px] py-4 flex flex-col gap-3">
-              {(['subject', 'customer_name', 'address', 'phone', 'description'] as const).map((field) => (
-                <label key={field} className="flex flex-col gap-1 text-[12px] font-medium text-slate-500 uppercase tracking-[0.05em]">
-                  {field.replace('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
-                  {field === 'description'
-                    ? <textarea
-                        className="px-2.5 py-2 border border-[#2a2f45] rounded text-[14px] text-slate-200 bg-[#21253a] focus:outline-none focus:border-blue-500 resize-y font-[inherit]"
-                        value={newOrder[field]}
-                        onChange={(e) => setNewOrder((o) => ({ ...o, [field]: e.target.value }))}
-                        rows={3}
-                      />
-                    : <input
-                        type="text"
-                        className="px-2.5 py-2 border border-[#2a2f45] rounded text-[14px] text-slate-200 bg-[#21253a] focus:outline-none focus:border-blue-500"
-                        value={newOrder[field]}
-                        onChange={(e) => setNewOrder((o) => ({ ...o, [field]: e.target.value }))}
-                      />
-                  }
-                </label>
-              ))}
-            </div>
-            <div className="flex justify-end gap-2 px-[18px] py-3 border-t border-[#2a2f45]">
-              <button
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#21253a] border border-[#2a2f45] text-slate-200 hover:bg-[#2a2f45] rounded text-sm font-medium cursor-pointer transition-colors"
-                onClick={() => setAddOrderOpen(false)}
-              >
-                Cancel
-              </button>
-              <button
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded text-sm font-medium cursor-pointer transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                onClick={handleAddOrder}
-                disabled={!newOrder.subject.trim()}
-              >
-                Add
-              </button>
-            </div>
+      {/* Add Service Order modal */}
+      <div
+        className={`fixed inset-0 bg-black/65 flex items-center justify-center z-50 backdrop-blur-sm transition-opacity duration-200 ${addOrderOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+        onClick={() => setAddOrderOpen(false)}
+      >
+        <div
+          className={`bg-[#1a1d27] border border-[#2a2f45] rounded-lg shadow-2xl min-w-80 max-w-md w-full transition-all duration-200 ${addOrderOpen ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-2'}`}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex items-center justify-between px-[18px] py-3.5 border-b border-[#2a2f45]">
+            <h3 className="text-[15px] font-semibold text-slate-200">Add Service Order</h3>
+            <button
+              className="bg-none border-none text-[15px] cursor-pointer text-slate-500 px-1.5 py-0.5 rounded hover:bg-[#21253a] hover:text-slate-200 transition-colors"
+              onClick={() => setAddOrderOpen(false)}
+            >
+              ✕
+            </button>
+          </div>
+          <div className="px-[18px] py-4 flex flex-col gap-3">
+            {(['subject', 'customer_name', 'address', 'phone', 'description'] as const).map((field) => (
+              <label key={field} className="flex flex-col gap-1 text-[12px] font-medium text-slate-500 uppercase tracking-[0.05em]">
+                {field.replace('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
+                {field === 'description'
+                  ? <textarea
+                      className="px-2.5 py-2 border border-[#2a2f45] rounded text-[14px] text-slate-200 bg-[#21253a] focus:outline-none focus:border-blue-500 resize-y font-[inherit]"
+                      value={newOrder[field]}
+                      onChange={(e) => setNewOrder((o) => ({ ...o, [field]: e.target.value }))}
+                      rows={3}
+                    />
+                  : <input
+                      type="text"
+                      className="px-2.5 py-2 border border-[#2a2f45] rounded text-[14px] text-slate-200 bg-[#21253a] focus:outline-none focus:border-blue-500"
+                      value={newOrder[field]}
+                      onChange={(e) => setNewOrder((o) => ({ ...o, [field]: e.target.value }))}
+                    />
+                }
+              </label>
+            ))}
+          </div>
+          <div className="flex justify-end gap-2 px-[18px] py-3 border-t border-[#2a2f45]">
+            <button
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#21253a] border border-[#2a2f45] text-slate-200 hover:bg-[#2a2f45] rounded text-sm font-medium cursor-pointer transition-colors"
+              onClick={() => setAddOrderOpen(false)}
+            >
+              Cancel
+            </button>
+            <button
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded text-sm font-medium cursor-pointer transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              onClick={handleAddOrder}
+              disabled={!newOrder.subject.trim()}
+            >
+              Add
+            </button>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }

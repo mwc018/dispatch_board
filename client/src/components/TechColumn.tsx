@@ -11,9 +11,10 @@ interface TechColumnProps {
   onSetNotes: (assignmentId: number | undefined, notes: string | null | undefined) => void;
   onUnassign: (id: number, techId: number) => void;
   onAlsoAssign: (serviceOrderId: number, currentTechId: number) => void;
+  highlightedSoId?: number | null;
 }
 
-export default function TechColumn({ tech, allTechs, onSetTime, onSetNotes, onUnassign, onAlsoAssign }: TechColumnProps) {
+export default function TechColumn({ tech, allTechs, onSetTime, onSetNotes, onUnassign, onAlsoAssign, highlightedSoId }: TechColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id: `tech_${tech.id}` });
 
   const assignments = tech.assignments || [];
@@ -52,7 +53,7 @@ export default function TechColumn({ tech, allTechs, onSetTime, onSetNotes, onUn
       </div>
       <div
         ref={setNodeRef}
-        className={`flex-1 overflow-y-auto p-2 flex flex-col gap-[5px] min-h-[60px] transition-colors${isOver ? ' bg-blue-500/10 outline-dashed outline-2 outline-blue-500/40 outline-offset-[-4px] rounded' : ''}`}
+        className={`flex-1 overflow-y-auto p-2 flex flex-col gap-[5px] min-h-[60px] transition-all duration-150${isOver ? ' bg-blue-500/15 outline-dashed outline-2 outline-blue-500/60 outline-offset-[-4px] rounded scale-[1.01]' : ''}`}
       >
         <SortableContext items={items.map((i) => i.dndId)} strategy={verticalListSortingStrategy}>
           {items.length === 0 && (
@@ -69,6 +70,7 @@ export default function TechColumn({ tech, allTechs, onSetTime, onSetNotes, onUn
               assignmentId={item.assignmentId}
               notes={item.notes}
               coAssignees={item.coAssignees}
+              highlighted={highlightedSoId === item.id}
               onSetTime={onSetTime}
               onSetNotes={onSetNotes}
               onUnassign={(id) => onUnassign(id, tech.id)}

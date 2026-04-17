@@ -4,6 +4,7 @@ import { useSocket } from '../hooks/useSocket';
 import { useAuth } from '../hooks/useAuth';
 import { TechBoardState, Technician } from '../types';
 import NotesModal from '../components/NotesModal';
+import { useToast } from '../components/Toast';
 
 interface TechViewProps {
   techId?: string;
@@ -11,6 +12,7 @@ interface TechViewProps {
 
 export default function TechView({ techId: propTechId }: TechViewProps) {
   const { logout } = useAuth();
+  const toast = useToast();
   const params = new URLSearchParams(window.location.search);
   const techId = propTechId || params.get('techId');
   const today = new Date().toISOString().split('T')[0];
@@ -22,7 +24,9 @@ export default function TechView({ techId: propTechId }: TechViewProps) {
   const [selectedTechId, setSelectedTechId] = useState(techId || '');
   const [notesModal, setNotesModal] = useState<{ assignmentId: number; currentNotes: string | null } | null>(null);
   const [timeModal, setTimeModal] = useState<{ assignmentId: number; current: number } | null>(null);
-  const [timeInput, setTimeInput] = useState({ hours: '', minutes: '' });
+  const [timeInput, setTimeInput] = useState({ arrival: '', departure: '' });
+  const [completingId, setCompletingId] = useState<number | null>(null);
+  const [completing, setCompleting] = useState<number | null>(null);
 
   const fetchData = useCallback(async () => {
     if (!selectedTechId) return;
@@ -69,24 +73,57 @@ export default function TechView({ techId: propTechId }: TechViewProps) {
     if (!notesModal) return;
     await setNotes(notesModal.assignmentId, newNotes, date);
     setNotesModal(null);
+    toast.success('Notes saved');
     fetchData();
   };
 
   const handleTimeAdd = async () => {
     if (!timeModal) return;
-    const added = (parseInt(timeInput.hours) || 0) * 60 + (parseInt(timeInput.minutes) || 0);
-    if (added <= 0) return;
-    const newTotal = timeModal.current + added;
-    await setTimeWorked(timeModal.assignmentId, newTotal, date);
-    setTimeModal(null);
-    setTimeInput({ hours: '', minutes: '' });
-    fetchData();
+    const toMinutes = (t: string) => {
+      const [h, m] = t.split(':').map(Number);
+      return h * 60 + m;
+    };
+    const arrival = timeInput.arrival;
+    const departure = timeInput.departure;
+    if (!arrival || !departure) {
+      toast.error('Please enter both arrival and departure times');
+      return;
+    }
+    const added = toMinutes(departure) - toMinutes(arrival);
+    if (added <= 0) {
+      toast.error('Departure must be after arrival');
+      return;
+    }
+    const snapshot = { ...timeModal };
+    const newTotal = snapshot.current + added;
+    try {
+      await setTimeWorked(snapshot.assignmentId, newTotal, date);
+      setTimeModal(null);
+      setTimeInput({ arrival: '', departure: '' });
+      toast.success(`Added ${formatTimeWorked(added)} — total ${formatTimeWorked(newTotal)}`);
+      fetchData();
+    } catch {
+      toast.error('Failed to save time — please try again');
+    }
   };
 
-  const handleComplete = async (assignmentId: number) => {
-    if (!confirm('Mark this job as complete? It will be removed from the board and updated in Zoho.')) return;
-    await completeAssignment(assignmentId, date);
-    fetchData();
+  const handleComplete = (assignmentId: number) => {
+    toast.confirm('Mark this job as complete?', async () => {
+      setCompletingId(assignmentId);
+      setCompleting(assignmentId);
+      setTimeout(async () => {
+        try {
+          await completeAssignment(assignmentId, date);
+          toast.success('Job marked as complete');
+          fetchData();
+        } catch {
+          toast.error('Failed to complete job');
+        } finally {
+          setCompleting(null);
+          setCompletingId(null);
+        }
+      }, 350);
+    });
   };
 
   return (
@@ -148,7 +185,10 @@ export default function TechView({ techId: propTechId }: TechViewProps) {
             </div>
           ) : (
             data.assignments.map((a, i) => (
-              <div key={a.id} className="bg-[#1a1d27] border border-[#2a2f45] rounded-lg shadow-sm flex overflow-hidden">
+              <div
+                key={a.id}
+                className={`bg-[#1a1d27] border border-[#2a2f45] rounded-lg shadow-sm flex overflow-hidden transition-all duration-300 ${completingId === a.id ? 'opacity-0 translate-x-8 scale-95' : 'opacity-100 translate-x-0 scale-100'}`}
+              >
                 <div className="bg-[#21253a] border-r border-[#2a2f45] text-slate-400 text-[20px] font-bold px-[18px] py-4 flex items-center justify-center flex-shrink-0 min-w-[56px]">
                   #{a.priority || i + 1}
                 </div>
@@ -170,15 +210,21 @@ export default function TechView({ techId: propTechId }: TechViewProps) {
                       </button>
                       <button
                         className="px-3 py-1.5 bg-[#21253a] border border-[#2a2f45] text-slate-400 hover:text-slate-200 hover:border-[#3a4060] rounded text-[12px] font-medium cursor-pointer transition-colors"
-                        onClick={() => { setTimeModal({ assignmentId: a.id, current: a.time_worked || 0 }); setTimeInput({ hours: '', minutes: '' }); }}
+                        onClick={() => { setTimeModal({ assignmentId: a.id, current: a.time_worked || 0 }); setTimeInput({ arrival: '', departure: '' }); }}
                       >
                         {a.time_worked ? `⏱ ${formatTimeWorked(a.time_worked)}` : '⏱ Add Time'}
                       </button>
                       <button
-                        className="px-3 py-1.5 bg-green-600/20 border border-green-600/40 text-green-400 hover:bg-green-600/30 hover:border-green-500 rounded text-[12px] font-medium cursor-pointer transition-colors"
+                        className="px-3 py-1.5 bg-green-600/20 border border-green-600/40 text-green-400 hover:bg-green-600/30 hover:border-green-500 rounded text-[12px] font-medium cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
                         onClick={() => handleComplete(a.id)}
+                        disabled={completing === a.id}
                       >
-                        ✓ Complete
+                        {completing === a.id ? (
+                          <>
+                            <span className="w-3 h-3 border-2 border-green-400/40 border-t-green-400 rounded-full animate-spin" />
+                            Completing...
+                          </>
+                        ) : '✓ Complete'}
                       </button>
                     </div>
                   </div>
@@ -231,64 +277,75 @@ export default function TechView({ techId: propTechId }: TechViewProps) {
         onClose={() => setNotesModal(null)}
       />
 
-      {timeModal && (
-        <div className="fixed inset-0 bg-black/65 flex items-center justify-center z-50 backdrop-blur-sm" onClick={() => setTimeModal(null)}>
-          <div className="bg-[#1a1d27] border border-[#2a2f45] rounded-lg shadow-2xl w-80" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-[18px] py-3.5 border-b border-[#2a2f45]">
-              <h3 className="text-[15px] font-semibold text-slate-200">Add Time</h3>
-              <button className="text-slate-500 hover:text-slate-200 px-1.5 py-0.5 rounded hover:bg-[#21253a] transition-colors" onClick={() => setTimeModal(null)}>✕</button>
-            </div>
-            <div className="px-[18px] py-4 flex flex-col gap-3">
-              {timeModal.current > 0 && (
-                <div className="text-[13px] text-slate-400 bg-[#21253a] rounded px-3 py-2">
-                  Total so far: <span className="text-slate-200 font-semibold">{formatTimeWorked(timeModal.current)}</span>
-                </div>
-              )}
-              <div className="flex gap-3">
-                <label className="flex flex-col gap-1.5 flex-1 text-[12px] font-medium text-slate-500 uppercase tracking-[0.05em]">
-                  Hours
-                  <input
-                    type="number"
-                    min="0"
-                    className="px-2.5 py-2 border border-[#2a2f45] rounded text-[14px] text-slate-200 bg-[#21253a] focus:outline-none focus:border-blue-500"
-                    value={timeInput.hours}
-                    onChange={(e) => setTimeInput((t) => ({ ...t, hours: e.target.value }))}
-                    placeholder="0"
-                    autoFocus
-                  />
-                </label>
-                <label className="flex flex-col gap-1.5 flex-1 text-[12px] font-medium text-slate-500 uppercase tracking-[0.05em]">
-                  Minutes
-                  <input
-                    type="number"
-                    min="0"
-                    max="59"
-                    className="px-2.5 py-2 border border-[#2a2f45] rounded text-[14px] text-slate-200 bg-[#21253a] focus:outline-none focus:border-blue-500"
-                    value={timeInput.minutes}
-                    onChange={(e) => setTimeInput((t) => ({ ...t, minutes: e.target.value }))}
-                    placeholder="0"
-                  />
-                </label>
+      {/* Add Time modal */}
+      <div
+        className={`fixed inset-0 bg-black/65 flex items-center justify-center z-50 backdrop-blur-sm transition-opacity duration-200 ${timeModal ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+        onClick={() => setTimeModal(null)}
+      >
+        <div
+          className={`bg-[#1a1d27] border border-[#2a2f45] rounded-lg shadow-2xl w-80 transition-all duration-200 ${timeModal ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-2'}`}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex items-center justify-between px-[18px] py-3.5 border-b border-[#2a2f45]">
+            <h3 className="text-[15px] font-semibold text-slate-200">Add Time</h3>
+            <button className="text-slate-500 hover:text-slate-200 px-1.5 py-0.5 rounded hover:bg-[#21253a] transition-colors" onClick={() => setTimeModal(null)}>✕</button>
+          </div>
+          <div className="px-[18px] py-4 flex flex-col gap-3">
+            {timeModal && timeModal.current > 0 && (
+              <div className="text-[13px] text-slate-400 bg-[#21253a] rounded px-3 py-2">
+                Total so far: <span className="text-slate-200 font-semibold">{formatTimeWorked(timeModal.current)}</span>
               </div>
+            )}
+            <div className="flex gap-3">
+              <label className="flex flex-col gap-1.5 flex-1 text-[12px] font-medium text-slate-500 uppercase tracking-[0.05em]">
+                Arrival
+                <input
+                  type="time"
+                  className="px-2.5 py-2 border border-[#2a2f45] rounded text-[14px] text-slate-200 bg-[#21253a] focus:outline-none focus:border-blue-500 [color-scheme:dark]"
+                  value={timeInput.arrival}
+                  onChange={(e) => setTimeInput((t) => ({ ...t, arrival: e.target.value }))}
+                  autoFocus={!!timeModal}
+                />
+              </label>
+              <label className="flex flex-col gap-1.5 flex-1 text-[12px] font-medium text-slate-500 uppercase tracking-[0.05em]">
+                Departure
+                <input
+                  type="time"
+                  className="px-2.5 py-2 border border-[#2a2f45] rounded text-[14px] text-slate-200 bg-[#21253a] focus:outline-none focus:border-blue-500 [color-scheme:dark]"
+                  value={timeInput.departure}
+                  onChange={(e) => setTimeInput((t) => ({ ...t, departure: e.target.value }))}
+                />
+              </label>
             </div>
-            <div className="flex justify-end gap-2 px-[18px] py-3 border-t border-[#2a2f45]">
-              <button
-                className="px-3 py-1.5 bg-[#21253a] border border-[#2a2f45] text-slate-200 hover:bg-[#2a2f45] rounded text-sm font-medium cursor-pointer transition-colors"
-                onClick={() => setTimeModal(null)}
-              >
-                Cancel
-              </button>
-              <button
-                className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded text-sm font-medium cursor-pointer transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                onClick={handleTimeAdd}
-                disabled={!parseInt(timeInput.hours) && !parseInt(timeInput.minutes)}
-              >
-                Add
-              </button>
-            </div>
+            {timeInput.arrival && timeInput.departure && (() => {
+              const toMin = (t: string) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
+              const diff = toMin(timeInput.departure) - toMin(timeInput.arrival);
+              return diff > 0 ? (
+                <div className="text-[13px] text-slate-400 bg-[#21253a] rounded px-3 py-2">
+                  Time on site: <span className="text-slate-200 font-semibold">{formatTimeWorked(diff)}</span>
+                </div>
+              ) : diff <= 0 ? (
+                <div className="text-[13px] text-red-400">Departure must be after arrival</div>
+              ) : null;
+            })()}
+          </div>
+          <div className="flex justify-end gap-2 px-[18px] py-3 border-t border-[#2a2f45]">
+            <button
+              className="px-3 py-1.5 bg-[#21253a] border border-[#2a2f45] text-slate-200 hover:bg-[#2a2f45] rounded text-sm font-medium cursor-pointer transition-colors"
+              onClick={() => setTimeModal(null)}
+            >
+              Cancel
+            </button>
+            <button
+              className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded text-sm font-medium cursor-pointer transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              onClick={handleTimeAdd}
+              disabled={!timeInput.arrival || !timeInput.departure}
+            >
+              Add
+            </button>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }

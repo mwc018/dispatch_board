@@ -16,6 +16,7 @@ interface ServiceOrderCardProps {
   compact?: boolean;
   notes?: string | null;
   coAssignees?: string[];
+  highlighted?: boolean;
 }
 
 export default function ServiceOrderCard({
@@ -31,6 +32,7 @@ export default function ServiceOrderCard({
   compact,
   notes,
   coAssignees,
+  highlighted,
 }: ServiceOrderCardProps) {
   const {
     attributes,
@@ -51,7 +53,7 @@ export default function ServiceOrderCard({
     <div
       ref={setNodeRef}
       style={style}
-      className={`bg-[#21253a] border border-[#2a2f45] rounded-lg shadow-sm flex items-start gap-1 p-[7px] cursor-grab transition-colors select-none group hover:border-[#3a4060] hover:shadow-md${isDragging ? ' border-blue-500 bg-[#1e2540] shadow-2xl' : ''}${compact ? '' : ''}`}
+      className={`bg-[#21253a] border border-[#2a2f45] rounded-lg shadow-sm flex items-start gap-1 p-[7px] cursor-grab transition-colors select-none group hover:border-[#3a4060] hover:shadow-md${isDragging ? ' border-blue-500 bg-[#1e2540] shadow-2xl opacity-40' : ''}${highlighted ? ' animate-flash' : ''}`}
       {...attributes}
       {...listeners}
     >

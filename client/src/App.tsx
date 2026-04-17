@@ -7,6 +7,7 @@ import { useRole } from './hooks/useRole';
 import ManagerBoard from './pages/ManagerBoard';
 import TechView from './pages/TechView';
 import LoginPage from './pages/LoginPage';
+import { ToastProvider } from './components/Toast';
 
 const msalInstance = new PublicClientApplication(msalConfig);
 
@@ -68,7 +69,9 @@ function AppContent() {
 export default function App() {
   return (
     <MsalProvider instance={msalInstance}>
-      <AppContent />
+      <ToastProvider>
+        <AppContent />
+      </ToastProvider>
     </MsalProvider>
   );
 }

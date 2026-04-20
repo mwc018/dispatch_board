@@ -28,7 +28,12 @@ export function useAuth() {
   };
 
   const login = async () => {
-    await instance.loginRedirect(loginRequest);
+    const inIframe = window.self !== window.top;
+    if (inIframe) {
+      window.open(window.location.origin, '_blank');
+    } else {
+      await instance.loginRedirect(loginRequest);
+    }
   };
 
   return { isAuthenticated, user, login, logout };

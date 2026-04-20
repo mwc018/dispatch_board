@@ -24,18 +24,28 @@ router.post('/zoho', (req: Request, res: Response) => {
       const description = record.description || record.Description || null;
       const phone = record.phone || record.Phone || record.Mobile || null;
 
-      const existing = db.prepare('SELECT id FROM service_orders WHERE zoho_id = ?').get([String(zohoId)]);
+      const status = record.Status || record.status || null;
+      const isClosed = status === 'Closed';
+
+      const existing = db.prepare('SELECT id FROM service_orders WHERE zoho_id = ?').get([String(zohoId)]) as any;
 
       if (existing) {
+        const newStatus = isClosed ? 'completed' : existing.status;
         db.prepare(
-          `UPDATE service_orders SET subject = ?, account_name = ?, customer_name = ?, address = ?, description = ?, phone = ?, updated_at = datetime('now') WHERE zoho_id = ?`
-        ).run([subject, accountName, customerName, address, description, phone, String(zohoId)]);
+          `UPDATE service_orders SET subject = ?, account_name = ?, customer_name = ?, address = ?, description = ?, phone = ?, status = ?, updated_at = datetime('now') WHERE zoho_id = ?`
+        ).run([subject, accountName, customerName, address, description, phone, newStatus, String(zohoId)]);
+
+        if (isClosed) {
+          db.prepare(`UPDATE dispatch_assignments SET is_completed = 1, updated_at = datetime('now') WHERE service_order_id = ?`)
+            .run([existing.id]);
+          db.prepare('DELETE FROM unassigned_order WHERE service_order_id = ?').run([existing.id]);
+        }
         updated++;
-      } else {
+      } else if (!isClosed) {
         const result = db.prepare(
           `INSERT INTO service_orders (zoho_id, subject, account_name, customer_name, address, description, phone, status) VALUES (?, ?, ?, ?, ?, ?, ?, 'unassigned')`
         ).run([String(zohoId), subject, accountName, customerName, address, description, phone]);
-        const maxPos = db.prepare('SELECT COALESCE(MAX(position), -1) as m FROM unassigned_order').get();
+        const maxPos = db.prepare('SELECT COALESCE(MAX(position), -1) as m FROM unassigned_order').get() as any;
         db.prepare('INSERT OR IGNORE INTO unassigned_order (service_order_id, position) VALUES (?, ?)').run([result.lastInsertRowid, maxPos.m + 1]);
         created++;
       }

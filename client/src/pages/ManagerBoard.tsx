@@ -179,7 +179,7 @@ export default function ManagerBoard() {
       const techId = parseInt(targetContainer.replace('tech_', ''));
       const order = board.unassigned.find((o) => `so_${o.id}` === activeDndId);
       if (!order) return;
-      await assignOrder({ service_order_id: order.id, technician_id: techId, date });
+      await alsoAssign(order.id, techId, date);
       setRecentlyDroppedSoId(order.id);
       setTimeout(() => setRecentlyDroppedSoId(null), 1500);
     }

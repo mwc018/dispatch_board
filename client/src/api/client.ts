@@ -46,6 +46,9 @@ export const setTimeWorked = (assignment_id: number, time_worked: number, date: 
 export const completeAssignment = (assignment_id: number, date: string): Promise<BoardState> =>
   api.post('/dispatch/complete', { assignment_id, date }).then((r) => r.data);
 
+export const uncompleteAssignment = (assignment_id: number, date: string): Promise<BoardState> =>
+  api.post('/dispatch/uncomplete', { assignment_id, date }).then((r) => r.data);
+
 export const getTechnicians = (): Promise<Technician[]> =>
   api.get('/technicians').then((r) => r.data);
 

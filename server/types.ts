@@ -32,6 +32,7 @@ export interface DispatchAssignment {
   dispatch_date: string;
   notes: string | null;
   time_worked: number | null;
+  is_completed: number;
   created_at: string;
   updated_at: string;
 }

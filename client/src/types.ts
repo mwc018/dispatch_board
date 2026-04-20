@@ -32,6 +32,7 @@ export interface DispatchAssignment {
   dispatch_date: string;
   notes: string | null;
   time_worked: number | null;
+  is_completed: number;
   zoho_id: string;
   subject: string;
   account_name: string | null;
@@ -72,6 +73,7 @@ export interface DndCardItem {
   scheduled_time?: string | null;
   notes?: string | null;
   coAssignees?: string[];
+  is_completed?: number;
 }
 
 export interface AddTechData {

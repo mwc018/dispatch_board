@@ -38,6 +38,7 @@ export default function TechColumn({ tech, allTechs, onSetTime, onSetNotes, onUn
       priority: a.priority,
       scheduled_time: a.scheduled_time,
       notes: a.notes,
+      is_completed: a.is_completed,
       coAssignees,
     };
   });
@@ -75,6 +76,7 @@ export default function TechColumn({ tech, allTechs, onSetTime, onSetNotes, onUn
               onSetNotes={onSetNotes}
               onUnassign={(id) => onUnassign(id, tech.id)}
               onAlsoAssign={() => onAlsoAssign(item.id, tech.id)}
+              isCompleted={!!item.is_completed}
             />
           ))}
         </SortableContext>

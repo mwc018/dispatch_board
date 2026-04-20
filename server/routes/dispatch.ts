@@ -288,19 +288,31 @@ router.post('/complete', async (req: Request, res: Response) => {
 
   const dispatchDate = date || assignment.dispatch_date;
 
-  db.prepare('DELETE FROM dispatch_assignments WHERE id = ?').run([assignment_id]);
-
-  const remaining = db.prepare(
-    'SELECT COUNT(*) as c FROM dispatch_assignments WHERE service_order_id = ? AND dispatch_date = ?'
-  ).get([assignment.service_order_id, dispatchDate]) as any;
-
-  if (remaining.c === 0) {
-    db.prepare("UPDATE service_orders SET status = 'completed', updated_at = datetime('now') WHERE id = ?")
-      .run([assignment.service_order_id]);
-    db.prepare('DELETE FROM unassigned_order WHERE service_order_id = ?').run([assignment.service_order_id]);
-  }
+  db.prepare("UPDATE dispatch_assignments SET is_completed = 1, updated_at = datetime('now') WHERE id = ?")
+    .run([assignment_id]);
 
   updateServiceOrderAssignment({ zohoId: assignment.zoho_id, status: 'Completed' });
+
+  const board = getBoardState(dispatchDate);
+  req.app.get('io')?.emit('board:updated', board);
+  res.json(board);
+});
+
+router.post('/uncomplete', async (req: Request, res: Response) => {
+  const { assignment_id, date } = req.body;
+  if (!assignment_id) return res.status(400).json({ error: 'assignment_id is required' });
+
+  const assignment = db.prepare(
+    'SELECT da.*, so.zoho_id FROM dispatch_assignments da JOIN service_orders so ON so.id = da.service_order_id WHERE da.id = ?'
+  ).get([assignment_id]) as any;
+  if (!assignment) return res.status(404).json({ error: 'Assignment not found' });
+
+  const dispatchDate = date || assignment.dispatch_date;
+
+  db.prepare("UPDATE dispatch_assignments SET is_completed = 0, updated_at = datetime('now') WHERE id = ?")
+    .run([assignment_id]);
+
+  updateServiceOrderAssignment({ zohoId: assignment.zoho_id, status: 'Assigned' });
 
   const board = getBoardState(dispatchDate);
   req.app.get('io')?.emit('board:updated', board);

@@ -17,6 +17,7 @@ interface ServiceOrderCardProps {
   notes?: string | null;
   coAssignees?: string[];
   highlighted?: boolean;
+  isCompleted?: boolean;
 }
 
 export default function ServiceOrderCard({
@@ -33,6 +34,7 @@ export default function ServiceOrderCard({
   notes,
   coAssignees,
   highlighted,
+  isCompleted,
 }: ServiceOrderCardProps) {
   const {
     attributes,
@@ -53,7 +55,7 @@ export default function ServiceOrderCard({
     <div
       ref={setNodeRef}
       style={style}
-      className={`bg-[#21253a] border border-[#2a2f45] rounded-lg shadow-sm flex items-start gap-1 p-[7px] cursor-grab transition-colors select-none group hover:border-[#3a4060] hover:shadow-md${isDragging ? ' border-blue-500 bg-[#1e2540] shadow-2xl opacity-40' : ''}${highlighted ? ' animate-flash' : ''}`}
+      className={`rounded-lg shadow-sm flex items-start gap-1 p-[7px] cursor-grab transition-all select-none group${isCompleted ? ' bg-green-900/20 border border-green-500/40 hover:border-green-500/60' : ' bg-[#21253a] border border-[#2a2f45] hover:border-[#3a4060] hover:shadow-md'}${isDragging ? ' border-blue-500 bg-[#1e2540] shadow-2xl opacity-40' : ''}${highlighted ? ' animate-flash' : ''}`}
       {...attributes}
       {...listeners}
     >
@@ -69,7 +71,7 @@ export default function ServiceOrderCard({
               {scheduledTime}
             </span>
           )}
-          <span className="text-[12px] font-semibold text-slate-200 whitespace-nowrap">{item.subject}</span>
+          <span className={`text-[12px] font-semibold whitespace-nowrap ${isCompleted ? 'text-green-300' : 'text-slate-200'}`}>{item.subject}</span>
           <div
             className="ml-auto flex items-center gap-0.5 flex-shrink-0"
             onPointerDown={(e) => e.stopPropagation()}

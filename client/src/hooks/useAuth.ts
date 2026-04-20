@@ -23,12 +23,12 @@ export function useAuth() {
       devLogout();
       window.location.reload();
     } else {
-      instance.logoutPopup();
+      instance.logoutRedirect();
     }
   };
 
   const login = async () => {
-    await instance.loginPopup(loginRequest);
+    await instance.loginRedirect(loginRequest);
   };
 
   return { isAuthenticated, user, login, logout };

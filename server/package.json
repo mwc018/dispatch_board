@@ -4,7 +4,7 @@
   "description": "Dispatch board backend",
   "main": "index.js",
   "scripts": {
-    "start": "node --import tsx/esm index.ts",
+    "start": "npx tsx index.ts",
     "dev": "nodemon --exec tsx index.ts"
   },
   "dependencies": {

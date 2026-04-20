@@ -7,6 +7,6 @@
     "start": "cd server && node --import tsx/esm index.ts"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": "22.x"
   }
 }

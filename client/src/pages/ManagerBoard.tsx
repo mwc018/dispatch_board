@@ -26,7 +26,6 @@ import ServiceOrderCard from '../components/ServiceOrderCard';
 import TimeModal from '../components/TimeModal';
 import NotesModal from '../components/NotesModal';
 import AddTechModal from '../components/AddTechModal';
-import AlsoAssignModal from '../components/AlsoAssignModal';
 import { useSocket } from '../hooks/useSocket';
 import { useToast } from '../components/Toast';
 import {
@@ -69,7 +68,6 @@ export default function ManagerBoard() {
   const [notesModal, setNotesModal] = useState<NotesModalState | null>(null);
   const [addTechOpen, setAddTechOpen] = useState(false);
   const [addOrderOpen, setAddOrderOpen] = useState(false);
-  const [alsoAssignModal, setAlsoAssignModal] = useState<{ serviceOrderId: number; currentTechId: number } | null>(null);
   const [newOrder, setNewOrder] = useState<AddOrderData>({ subject: '', customer_name: '', address: '', phone: '', description: '' });
   const [recentlyDroppedSoId, setRecentlyDroppedSoId] = useState<number | null>(null);
   const [socketFlash, setSocketFlash] = useState(false);
@@ -240,17 +238,6 @@ export default function ManagerBoard() {
     await unassignOrder(serviceOrderId, date, undefined, techId);
   };
 
-  const handleAlsoAssign = (serviceOrderId: number, currentTechId: number) => {
-    setAlsoAssignModal({ serviceOrderId, currentTechId });
-  };
-
-  const handleAlsoAssignSave = async (targetTechId: number) => {
-    if (!alsoAssignModal) return;
-    await alsoAssign(alsoAssignModal.serviceOrderId, targetTechId, date);
-    setAlsoAssignModal(null);
-    toast.success('Job assigned to additional tech');
-  };
-
   const handleDelete = async (serviceOrderId: number) => {
     toast.confirm('Remove this service order from the board?', async () => {
       await deleteServiceOrder(serviceOrderId);
@@ -360,7 +347,6 @@ export default function ManagerBoard() {
                 onSetTime={handleSetTime}
                 onSetNotes={handleSetNotes}
                 onUnassign={handleUnassign}
-                onAlsoAssign={handleAlsoAssign}
                 highlightedSoId={recentlyDroppedSoId}
               />
             ))}
@@ -398,20 +384,6 @@ export default function ManagerBoard() {
         onSave={handleAddTech}
         onClose={() => setAddTechOpen(false)}
       />
-      <AlsoAssignModal
-        isOpen={!!alsoAssignModal}
-        onClose={() => setAlsoAssignModal(null)}
-        onAssign={handleAlsoAssignSave}
-        availableTechs={
-          alsoAssignModal
-            ? board.technicians.filter((t) =>
-                t.id !== alsoAssignModal.currentTechId &&
-                !(t.assignments || []).some((a) => a.service_order_id === alsoAssignModal.serviceOrderId)
-              )
-            : []
-        }
-      />
-
       {/* Add Service Order modal */}
       <div
         className={`fixed inset-0 bg-black/65 flex items-center justify-center z-50 backdrop-blur-sm transition-opacity duration-200 ${addOrderOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}

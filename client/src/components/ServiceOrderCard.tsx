@@ -12,7 +12,6 @@ interface ServiceOrderCardProps {
   onSetNotes?: (assignmentId: number | undefined, notes: string | null | undefined) => void;
   onUnassign?: (id: number) => void;
   onDelete?: (id: number) => void;
-  onAlsoAssign?: () => void;
   compact?: boolean;
   notes?: string | null;
   coAssignees?: string[];
@@ -29,7 +28,6 @@ export default function ServiceOrderCard({
   onSetNotes,
   onUnassign,
   onDelete,
-  onAlsoAssign,
   compact,
   notes,
   coAssignees,
@@ -76,15 +74,6 @@ export default function ServiceOrderCard({
             className="ml-auto flex items-center gap-0.5 flex-shrink-0"
             onPointerDown={(e) => e.stopPropagation()}
           >
-            {onAlsoAssign && (
-              <button
-                className="opacity-0 group-hover:opacity-100 transition-opacity bg-transparent border border-transparent px-1 py-px rounded text-[11px] text-slate-500 hover:text-blue-400 hover:border-blue-500 hover:bg-blue-500/10 leading-none"
-                onClick={(e) => { e.stopPropagation(); onAlsoAssign(); }}
-                title="Also assign to another tech"
-              >
-                +
-              </button>
-            )}
             {onUnassign && (
               <button
                 className="[@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 transition-opacity bg-transparent border border-transparent px-1 py-px rounded text-[11px] text-slate-500 hover:text-red-400 hover:border-red-500 hover:bg-red-500/10 active:text-red-400 active:border-red-500 leading-none"

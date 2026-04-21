@@ -10,11 +10,10 @@ interface TechColumnProps {
   onSetTime: (assignmentId: number | undefined, scheduledTime: string | null | undefined) => void;
   onSetNotes: (assignmentId: number | undefined, notes: string | null | undefined) => void;
   onUnassign: (id: number, techId: number) => void;
-  onAlsoAssign: (serviceOrderId: number, currentTechId: number) => void;
   highlightedSoId?: number | null;
 }
 
-export default function TechColumn({ tech, allTechs, onSetTime, onSetNotes, onUnassign, onAlsoAssign, highlightedSoId }: TechColumnProps) {
+export default function TechColumn({ tech, allTechs, onSetTime, onSetNotes, onUnassign, highlightedSoId }: TechColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id: `tech_${tech.id}` });
 
   const assignments = tech.assignments || [];
@@ -75,7 +74,6 @@ export default function TechColumn({ tech, allTechs, onSetTime, onSetNotes, onUn
               onSetTime={onSetTime}
               onSetNotes={onSetNotes}
               onUnassign={(id) => onUnassign(id, tech.id)}
-              onAlsoAssign={() => onAlsoAssign(item.id, tech.id)}
               isCompleted={!!item.is_completed}
             />
           ))}

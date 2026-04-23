@@ -77,6 +77,7 @@ const schemaRow = db.prepare("SELECT sql FROM sqlite_master WHERE type='table' A
 const needsMultiAssignMigration = schemaRow && !schemaRow.sql.includes('service_order_id, technician_id, dispatch_date');
 if (needsMultiAssignMigration) {
   try {
+    db.exec('PRAGMA foreign_keys = OFF');
     db.exec('DROP TABLE IF EXISTS dispatch_assignments_new');
     db.exec('BEGIN');
     db.exec(`CREATE TABLE dispatch_assignments_new (
@@ -105,8 +106,10 @@ if (needsMultiAssignMigration) {
     db.exec('COMMIT');
     db.exec('CREATE INDEX IF NOT EXISTS idx_assignments_date ON dispatch_assignments(dispatch_date)');
     db.exec('CREATE INDEX IF NOT EXISTS idx_assignments_tech ON dispatch_assignments(technician_id, dispatch_date)');
+    db.exec('PRAGMA foreign_keys = ON');
   } catch (e) {
     try { db.exec('ROLLBACK'); } catch (_) {}
+    db.exec('PRAGMA foreign_keys = ON');
     console.error('[DB Migration] multi-assign migration failed:', e);
   }
 }

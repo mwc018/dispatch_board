@@ -9,7 +9,7 @@ if (!fs.existsSync(dataDir)) {
 }
 
 const db: any = new Database(DB_PATH);
-db.exec('PRAGMA journal_mode = WAL');
+db.exec('PRAGMA journal_mode = DELETE');
 db.exec('PRAGMA foreign_keys = ON');
 
 db.exec(`

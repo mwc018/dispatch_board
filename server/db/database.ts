@@ -8,6 +8,10 @@ if (!fs.existsSync(dataDir)) {
   fs.mkdirSync(dataDir, { recursive: true });
 }
 
+for (const ext of ['-wal', '-shm', '.lock']) {
+  try { fs.rmSync(DB_PATH + ext, { recursive: true, force: true }); } catch (_) {}
+}
+
 const db: any = new Database(DB_PATH);
 db.exec('PRAGMA journal_mode = DELETE');
 db.exec('PRAGMA foreign_keys = ON');

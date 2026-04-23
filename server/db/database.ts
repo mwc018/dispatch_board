@@ -77,6 +77,7 @@ const schemaRow = db.prepare("SELECT sql FROM sqlite_master WHERE type='table' A
 const needsMultiAssignMigration = schemaRow && !schemaRow.sql.includes('service_order_id, technician_id, dispatch_date');
 if (needsMultiAssignMigration) {
   try {
+    db.exec('DROP TABLE IF EXISTS dispatch_assignments_new');
     db.exec('BEGIN');
     db.exec(`CREATE TABLE dispatch_assignments_new (
       id INTEGER PRIMARY KEY AUTOINCREMENT,

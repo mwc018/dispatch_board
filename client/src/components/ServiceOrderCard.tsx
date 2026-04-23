@@ -69,7 +69,7 @@ export default function ServiceOrderCard({
               {scheduledTime}
             </span>
           )}
-          <span className={`text-[12px] font-semibold whitespace-nowrap ${isCompleted ? 'text-green-300' : 'text-slate-200'}`}>{item.subject}</span>
+          <span className={`text-[12px] font-semibold break-words ${isCompleted ? 'text-green-300' : 'text-slate-200'}`}>{item.subject}</span>
           <div
             className="ml-auto flex items-center gap-0.5 flex-shrink-0"
             onPointerDown={(e) => e.stopPropagation()}
@@ -96,13 +96,13 @@ export default function ServiceOrderCard({
         </div>
 
         {item.account_name && (
-          <div className="text-[12px] font-semibold text-slate-400 whitespace-nowrap">{item.account_name}</div>
+          <div className="text-[12px] font-semibold text-slate-400 break-words">{item.account_name}</div>
         )}
         {item.customer_name && (
-          <div className="text-[11px] text-slate-500 whitespace-nowrap">{item.customer_name}</div>
+          <div className="text-[11px] text-slate-500 break-words">{item.customer_name}</div>
         )}
         {item.address && (
-          <div className="text-[10px] text-slate-500 whitespace-nowrap">{item.address}</div>
+          <div className="text-[10px] text-slate-500 break-words">{item.address}</div>
         )}
         {item.phone && (
           <div className="text-[10px] text-slate-500">{item.phone}</div>
@@ -115,7 +115,7 @@ export default function ServiceOrderCard({
         )}
 
         {notes && (
-          <div className="text-[10px] text-amber-400 bg-amber-400/10 rounded px-1 py-0.5 mt-[3px] whitespace-nowrap">
+          <div className="text-[10px] text-amber-400 bg-amber-400/10 rounded px-1 py-0.5 mt-[3px] break-words">
             {notes}
           </div>
         )}
@@ -133,7 +133,7 @@ export default function ServiceOrderCard({
           >
             {onSetTime && (
               <button
-                className="bg-[#1a1d27] border border-[#2a2f45] px-2.5 py-1 rounded text-[11px] font-medium text-slate-400 cursor-pointer transition-colors hover:bg-[#2a2f45] hover:text-slate-200 hover:border-[#3a4060] whitespace-nowrap leading-none"
+                className="bg-[#1a1d27] border border-[#2a2f45] px-2.5 py-1 rounded text-[11px] font-medium text-slate-400 cursor-pointer transition-colors hover:bg-[#2a2f45] hover:text-slate-200 hover:border-[#3a4060] break-words leading-none"
                 onClick={() => onSetTime(assignmentId, scheduledTime)}
                 title="Set time"
               >
@@ -142,7 +142,7 @@ export default function ServiceOrderCard({
             )}
             {onSetNotes && (
               <button
-                className="bg-[#1a1d27] border border-[#2a2f45] px-2.5 py-1 rounded text-[11px] font-medium text-slate-400 cursor-pointer transition-colors hover:bg-[#2a2f45] hover:text-slate-200 hover:border-[#3a4060] whitespace-nowrap leading-none"
+                className="bg-[#1a1d27] border border-[#2a2f45] px-2.5 py-1 rounded text-[11px] font-medium text-slate-400 cursor-pointer transition-colors hover:bg-[#2a2f45] hover:text-slate-200 hover:border-[#3a4060] break-words leading-none"
                 onClick={() => onSetNotes(assignmentId, notes)}
                 title="Add notes"
               >

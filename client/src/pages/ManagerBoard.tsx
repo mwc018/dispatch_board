@@ -30,7 +30,6 @@ import { useSocket } from '../hooks/useSocket';
 import { useToast } from '../components/Toast';
 import {
   getBoard,
-  assignOrder,
   unassignOrder,
   alsoAssign,
   reorderUnassigned,
@@ -196,7 +195,7 @@ export default function ManagerBoard() {
       const targetTechId = parseInt(targetContainer.replace('tech_', ''));
       const assignment = findAssignmentByDndId(activeDndId);
       if (assignment) {
-        await assignOrder({ service_order_id: assignment.service_order_id, technician_id: targetTechId, date });
+        await alsoAssign(assignment.service_order_id, targetTechId, date);
         setRecentlyDroppedSoId(assignment.service_order_id);
         setTimeout(() => setRecentlyDroppedSoId(null), 1500);
       }

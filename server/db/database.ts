@@ -13,6 +13,7 @@ for (const ext of ['-wal', '-shm', '.lock']) {
 }
 
 const db: any = new Database(DB_PATH);
+db.exec('PRAGMA busy_timeout = 10000');
 db.exec('PRAGMA journal_mode = DELETE');
 db.exec('PRAGMA foreign_keys = ON');
 

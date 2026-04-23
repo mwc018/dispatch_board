@@ -8,11 +8,6 @@ if (!fs.existsSync(dataDir)) {
   fs.mkdirSync(dataDir, { recursive: true });
 }
 
-// Remove WAL lock files left over from previous runs before opening
-for (const ext of ['-wal', '-shm', '.lock']) {
-  try { fs.rmSync(DB_PATH + ext, { recursive: true, force: true }); } catch (_) {}
-}
-
 const db: any = new Database(DB_PATH);
 db.exec('PRAGMA journal_mode = DELETE');
 db.exec('PRAGMA foreign_keys = ON');
@@ -50,6 +45,8 @@ db.exec(`
     scheduled_time TEXT,
     dispatch_date TEXT NOT NULL DEFAULT (date('now')),
     notes TEXT,
+    time_worked INTEGER DEFAULT 0,
+    is_completed INTEGER DEFAULT 0,
     created_at TEXT DEFAULT (datetime('now')),
     updated_at TEXT DEFAULT (datetime('now')),
     FOREIGN KEY (service_order_id) REFERENCES service_orders(id) ON DELETE CASCADE,
@@ -66,52 +63,5 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_assignments_date ON dispatch_assignments(dispatch_date);
   CREATE INDEX IF NOT EXISTS idx_assignments_tech ON dispatch_assignments(technician_id, dispatch_date);
 `);
-
-// Migrations
-try { db.exec('ALTER TABLE service_orders ADD COLUMN account_name TEXT'); } catch (_) {}
-try { db.exec('ALTER TABLE dispatch_assignments ADD COLUMN time_worked INTEGER DEFAULT 0'); } catch (_) {}
-try { db.exec('ALTER TABLE dispatch_assignments ADD COLUMN is_completed INTEGER DEFAULT 0'); } catch (_) {}
-
-// Migration: fix unique constraint to allow multi-assign (one order → many techs per day)
-const schemaRow = db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='dispatch_assignments'").get() as any;
-const needsMultiAssignMigration = schemaRow && !schemaRow.sql.includes('service_order_id, technician_id, dispatch_date');
-if (needsMultiAssignMigration) {
-  try {
-    db.exec('PRAGMA foreign_keys = OFF');
-    db.exec('DROP TABLE IF EXISTS dispatch_assignments_new');
-    db.exec('BEGIN');
-    db.exec(`CREATE TABLE dispatch_assignments_new (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      service_order_id INTEGER NOT NULL,
-      technician_id INTEGER NOT NULL,
-      priority INTEGER NOT NULL,
-      scheduled_time TEXT,
-      dispatch_date TEXT NOT NULL DEFAULT (date('now')),
-      notes TEXT,
-      time_worked INTEGER DEFAULT 0,
-      is_completed INTEGER DEFAULT 0,
-      created_at TEXT DEFAULT (datetime('now')),
-      updated_at TEXT DEFAULT (datetime('now')),
-      FOREIGN KEY (service_order_id) REFERENCES service_orders(id) ON DELETE CASCADE,
-      FOREIGN KEY (technician_id) REFERENCES technicians(id) ON DELETE CASCADE,
-      UNIQUE(service_order_id, technician_id, dispatch_date)
-    )`);
-    db.exec(`INSERT OR IGNORE INTO dispatch_assignments_new
-      (id, service_order_id, technician_id, priority, scheduled_time, dispatch_date, notes, time_worked, is_completed, created_at, updated_at)
-      SELECT id, service_order_id, technician_id, priority, scheduled_time, dispatch_date, notes,
-        COALESCE(time_worked, 0), COALESCE(is_completed, 0), created_at, updated_at
-      FROM dispatch_assignments`);
-    db.exec('DROP TABLE dispatch_assignments');
-    db.exec('ALTER TABLE dispatch_assignments_new RENAME TO dispatch_assignments');
-    db.exec('COMMIT');
-    db.exec('CREATE INDEX IF NOT EXISTS idx_assignments_date ON dispatch_assignments(dispatch_date)');
-    db.exec('CREATE INDEX IF NOT EXISTS idx_assignments_tech ON dispatch_assignments(technician_id, dispatch_date)');
-    db.exec('PRAGMA foreign_keys = ON');
-  } catch (e) {
-    try { db.exec('ROLLBACK'); } catch (_) {}
-    db.exec('PRAGMA foreign_keys = ON');
-    console.error('[DB Migration] multi-assign migration failed:', e);
-  }
-}
 
 export default db;

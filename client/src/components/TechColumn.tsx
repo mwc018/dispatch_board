@@ -10,10 +10,11 @@ interface TechColumnProps {
   onSetTime: (assignmentId: number | undefined, scheduledTime: string | null | undefined) => void;
   onSetNotes: (assignmentId: number | undefined, notes: string | null | undefined) => void;
   onUnassign: (id: number, techId: number) => void;
+  onDeleteTech: (techId: number) => void;
   highlightedSoId?: number | null;
 }
 
-export default function TechColumn({ tech, allTechs, onSetTime, onSetNotes, onUnassign, highlightedSoId }: TechColumnProps) {
+export default function TechColumn({ tech, allTechs, onSetTime, onSetNotes, onUnassign, onDeleteTech, highlightedSoId }: TechColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id: `tech_${tech.id}` });
 
   const assignments = tech.assignments || [];
@@ -45,11 +46,20 @@ export default function TechColumn({ tech, allTechs, onSetTime, onSetNotes, onUn
   return (
     <div className="flex-1 min-w-[180px] bg-[#1a1d27] border border-[#2a2f45] rounded-lg flex flex-col overflow-hidden">
       <div
-        className="px-3 py-2.5 border-b border-[#2a2f45] border-t-[3px] flex-shrink-0 flex items-center justify-between"
+        className="px-3 py-2.5 border-b border-[#2a2f45] border-t-[3px] flex-shrink-0 flex items-center justify-between group"
         style={{ borderTopColor: tech.color || '#3b82f6' }}
       >
         <span className="text-[13px] font-semibold text-slate-200">{tech.name}</span>
-        <span className="text-[11px] text-slate-500">{assignments.length} jobs</span>
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] text-slate-500">{assignments.length} jobs</span>
+          <button
+            className="opacity-0 group-hover:opacity-100 transition-opacity text-slate-600 hover:text-red-400 text-[13px] leading-none px-1"
+            onClick={() => onDeleteTech(tech.id)}
+            title="Remove technician"
+          >
+            ✕
+          </button>
+        </div>
       </div>
       <div
         ref={setNodeRef}

@@ -38,6 +38,7 @@ import {
   setTime,
   setNotes,
   addTechnician,
+  deleteTechnician,
   syncZohoTechs,
   deleteServiceOrder,
   addServiceOrder,
@@ -251,6 +252,13 @@ export default function ManagerBoard() {
     toast.success('Technician added');
   };
 
+  const handleDeleteTech = (techId: number) => {
+    toast.confirm('Remove this technician from the board?', async () => {
+      await deleteTechnician(techId);
+      toast.success('Technician removed');
+    });
+  };
+
   const handleSyncZoho = async () => {
     const result = await syncZohoTechs();
     toast.success(`Synced ${result.added} new technicians from Zoho`);
@@ -347,6 +355,7 @@ export default function ManagerBoard() {
                 onSetTime={handleSetTime}
                 onSetNotes={handleSetNotes}
                 onUnassign={handleUnassign}
+                onDeleteTech={handleDeleteTech}
                 highlightedSoId={recentlyDroppedSoId}
               />
             ))}

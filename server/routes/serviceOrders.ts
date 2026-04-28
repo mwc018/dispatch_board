@@ -57,6 +57,15 @@ router.put('/:id', (req: Request, res: Response) => {
   res.json(updated);
 });
 
+// DELETE /api/service-orders — clear all service orders
+router.delete('/', (req: Request, res: Response) => {
+  db.prepare('DELETE FROM unassigned_order').run();
+  db.prepare('DELETE FROM dispatch_assignments').run();
+  db.prepare('DELETE FROM service_orders').run();
+  req.app.get('io')?.emit('board:refresh');
+  res.json({ success: true });
+});
+
 // DELETE /api/service-orders/:id
 router.delete('/:id', (req: Request, res: Response) => {
   const order = db.prepare('SELECT * FROM service_orders WHERE id = ?').get([req.params.id]);

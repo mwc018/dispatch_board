@@ -70,6 +70,9 @@ export const addServiceOrder = (data: AddOrderData): Promise<ServiceOrder> =>
 export const deleteServiceOrder = (id: number): Promise<{ success: boolean }> =>
   api.delete(`/service-orders/${id}`).then((r) => r.data);
 
+export const clearAllServiceOrders = (): Promise<{ success: boolean }> =>
+  api.delete('/service-orders').then((r) => r.data);
+
 export type UserRole =
   | { role: 'manager' }
   | { role: 'tech'; techId: number; name: string }

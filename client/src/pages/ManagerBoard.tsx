@@ -41,6 +41,7 @@ import {
   syncZohoTechs,
   deleteServiceOrder,
   addServiceOrder,
+  clearAllServiceOrders,
 } from '../api/client';
 import { BoardState, DndCardItem, AddTechData, AddOrderData, DispatchAssignment } from '../types';
 
@@ -263,6 +264,13 @@ export default function ManagerBoard() {
     toast.success(`Synced ${result.added} new technicians from Zoho`);
   };
 
+  const handleClearAllOrders = () => {
+    toast.confirm('This will permanently delete ALL service orders and assignments. Are you sure?', async () => {
+      await clearAllServiceOrders();
+      toast.success('All service orders cleared');
+    });
+  };
+
   const handleAddOrder = async () => {
     if (!newOrder.subject.trim()) return;
     await addServiceOrder(newOrder);
@@ -329,6 +337,13 @@ export default function ManagerBoard() {
             title="Sync technicians from Zoho CRM"
           >
             ⟳ Sync Zoho Techs
+          </button>
+          <button
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-transparent border border-red-900/50 text-red-500/70 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/50 rounded text-[12px] cursor-pointer transition-colors"
+            onClick={handleClearAllOrders}
+            title="Delete all service orders"
+          >
+            Clear All Orders
           </button>
         </div>
       </div>

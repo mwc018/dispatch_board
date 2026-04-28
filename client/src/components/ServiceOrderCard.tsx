@@ -59,6 +59,11 @@ export default function ServiceOrderCard({
     >
       <div className="flex-none w-full">
         <div className="flex items-center gap-1 flex-wrap mb-[3px]">
+          {item.so_number && (
+            <span className="bg-violet-500/20 text-violet-300 text-[10px] font-bold px-1.5 py-px rounded-full flex-shrink-0 tracking-[0.03em]">
+              {item.so_number}
+            </span>
+          )}
           {priority && (
             <span className="bg-white/[0.12] text-slate-200 text-[10px] font-bold px-1.5 py-px rounded-full flex-shrink-0 tracking-[0.03em]">
               #{priority}

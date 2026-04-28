@@ -29,6 +29,7 @@ export default function TechColumn({ tech, allTechs, onSetTime, onSetNotes, onUn
       dndId: `assign_${a.id}`,
       id: a.service_order_id,
       assignmentId: a.id,
+      so_number: a.so_number,
       subject: a.subject,
       account_name: a.account_name,
       customer_name: a.customer_name,

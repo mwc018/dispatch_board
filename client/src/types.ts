@@ -1,6 +1,7 @@
 export interface ServiceOrder {
   id: number;
   zoho_id: string;
+  so_number: string | null;
   subject: string;
   account_name: string | null;
   customer_name: string | null;
@@ -34,6 +35,7 @@ export interface DispatchAssignment {
   time_worked: number | null;
   is_completed: number;
   zoho_id: string;
+  so_number: string | null;
   subject: string;
   account_name: string | null;
   customer_name: string | null;
@@ -63,6 +65,7 @@ export interface DndCardItem {
   dndId: string;
   id: number;
   assignmentId?: number;
+  so_number?: string | null;
   subject: string;
   account_name: string | null;
   customer_name: string | null;

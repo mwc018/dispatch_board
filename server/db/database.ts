@@ -14,6 +14,7 @@ for (const ext of ['-wal', '-shm', '.lock']) {
 
 const db: any = new Database(DB_PATH);
 db.exec('PRAGMA busy_timeout = 10000');
+try { db.exec('ALTER TABLE service_orders ADD COLUMN so_number TEXT'); } catch (_) {}
 db.exec('PRAGMA journal_mode = DELETE');
 db.exec('PRAGMA foreign_keys = ON');
 
@@ -21,6 +22,7 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS service_orders (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     zoho_id TEXT UNIQUE NOT NULL,
+    so_number TEXT,
     subject TEXT NOT NULL,
     account_name TEXT,
     customer_name TEXT,

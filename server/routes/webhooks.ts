@@ -3,7 +3,14 @@ import db from '../db/database';
 
 const router = express.Router();
 
+let lastPost: { timestamp: string; body: any } | null = null;
+
+router.get('/last', (_req: Request, res: Response) => {
+  res.json(lastPost || { message: 'No POST received yet' });
+});
+
 router.post('/zoho', (req: Request, res: Response) => {
+  lastPost = { timestamp: new Date().toISOString(), body: req.body };
   try {
     const payload = req.body;
     const records: any[] = Array.isArray(payload) ? payload : payload.data || [payload];
@@ -15,6 +22,7 @@ router.post('/zoho', (req: Request, res: Response) => {
       if (!zohoId) continue;
 
       const subject = record.Subject || record.subject || 'Untitled Service Order';
+      const soNumber = record.Service_Order_Number || record.so_number || record.SO_Number || null;
       const accountName = record.account_name || record.Account_Name?.name || null;
       const firstName = record.contact_name_first || '';
       const lastName = record.contact_name_last || '';
@@ -32,8 +40,8 @@ router.post('/zoho', (req: Request, res: Response) => {
       if (existing) {
         const newStatus = isClosed ? 'completed' : existing.status;
         db.prepare(
-          `UPDATE service_orders SET subject = ?, account_name = ?, customer_name = ?, address = ?, description = ?, phone = ?, status = ?, updated_at = datetime('now') WHERE zoho_id = ?`
-        ).run([subject, accountName, customerName, address, description, phone, newStatus, String(zohoId)]);
+          `UPDATE service_orders SET so_number = ?, subject = ?, account_name = ?, customer_name = ?, address = ?, description = ?, phone = ?, status = ?, updated_at = datetime('now') WHERE zoho_id = ?`
+        ).run([soNumber, subject, accountName, customerName, address, description, phone, newStatus, String(zohoId)]);
 
         if (isClosed) {
           db.prepare(`UPDATE dispatch_assignments SET is_completed = 1, updated_at = datetime('now') WHERE service_order_id = ?`)
@@ -43,8 +51,8 @@ router.post('/zoho', (req: Request, res: Response) => {
         updated++;
       } else if (!isClosed) {
         const result = db.prepare(
-          `INSERT INTO service_orders (zoho_id, subject, account_name, customer_name, address, description, phone, status) VALUES (?, ?, ?, ?, ?, ?, ?, 'unassigned')`
-        ).run([String(zohoId), subject, accountName, customerName, address, description, phone]);
+          `INSERT INTO service_orders (zoho_id, so_number, subject, account_name, customer_name, address, description, phone, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'unassigned')`
+        ).run([String(zohoId), soNumber, subject, accountName, customerName, address, description, phone]);
         const maxPos = db.prepare('SELECT COALESCE(MAX(position), -1) as m FROM unassigned_order').get() as any;
         db.prepare('INSERT OR IGNORE INTO unassigned_order (service_order_id, position) VALUES (?, ?)').run([result.lastInsertRowid, maxPos.m + 1]);
         created++;

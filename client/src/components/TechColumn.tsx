@@ -1,6 +1,7 @@
 import React from 'react';
 import { useDroppable } from '@dnd-kit/core';
-import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import ServiceOrderCard from './ServiceOrderCard';
 import { TechWithAssignments, DndCardItem } from '../types';
 
@@ -15,7 +16,22 @@ interface TechColumnProps {
 }
 
 export default function TechColumn({ tech, allTechs, onSetTime, onSetNotes, onUnassign, onDeleteTech, highlightedSoId }: TechColumnProps) {
-  const { setNodeRef, isOver } = useDroppable({ id: `tech_${tech.id}` });
+  const { setNodeRef: setDropRef, isOver } = useDroppable({ id: `tech_${tech.id}` });
+
+  const {
+    attributes,
+    listeners,
+    setNodeRef: setSortableRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: `tech_col_${tech.id}` });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+  };
 
   const assignments = tech.assignments || [];
 
@@ -45,13 +61,19 @@ export default function TechColumn({ tech, allTechs, onSetTime, onSetNotes, onUn
   });
 
   return (
-    <div className="flex-1 min-w-[180px] bg-[#1a1d27] border border-[#2a2f45] rounded-lg flex flex-col overflow-hidden">
+    <div
+      ref={setSortableRef}
+      style={style}
+      className="flex-1 min-w-[180px] bg-[#1a1d27] border border-[#2a2f45] rounded-lg flex flex-col overflow-hidden"
+    >
       <div
-        className="px-3 py-2.5 border-b border-[#2a2f45] border-t-[3px] flex-shrink-0 flex items-center justify-between group"
+        className="px-3 py-2.5 border-b border-[#2a2f45] border-t-[3px] flex-shrink-0 flex items-center justify-between group cursor-grab active:cursor-grabbing"
         style={{ borderTopColor: tech.color || '#3b82f6' }}
+        {...attributes}
+        {...listeners}
       >
         <span className="text-[13px] font-semibold text-slate-200">{tech.name}</span>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2" onPointerDown={(e) => e.stopPropagation()}>
           <span className="text-[11px] text-slate-500">{assignments.length} jobs</span>
           <button
             className="opacity-0 group-hover:opacity-100 transition-opacity text-slate-600 hover:text-red-400 text-[13px] leading-none px-1"
@@ -63,7 +85,7 @@ export default function TechColumn({ tech, allTechs, onSetTime, onSetNotes, onUn
         </div>
       </div>
       <div
-        ref={setNodeRef}
+        ref={setDropRef}
         className={`flex-1 overflow-y-auto p-2 flex flex-col gap-[5px] min-h-[60px] transition-all duration-150${isOver ? ' bg-blue-500/15 outline-dashed outline-2 outline-blue-500/60 outline-offset-[-4px] rounded scale-[1.01]' : ''}`}
       >
         <SortableContext items={items.map((i) => i.dndId)} strategy={verticalListSortingStrategy}>

@@ -64,6 +64,9 @@ export const deleteTechnician = (id: number): Promise<{ success: boolean }> =>
 export const syncZohoTechs = (): Promise<{ success: boolean; added: number; total: number }> =>
   api.post('/technicians/sync-zoho').then((r) => r.data);
 
+export const reorderTechnicians = (ordered_ids: number[]): Promise<{ success: boolean }> =>
+  api.post('/technicians/reorder', { ordered_ids }).then((r) => r.data);
+
 export const addServiceOrder = (data: AddOrderData): Promise<ServiceOrder> =>
   api.post('/service-orders', data).then((r) => r.data);
 

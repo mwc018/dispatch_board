@@ -15,7 +15,7 @@ function getBoardState(date?: string): BoardState {
     ORDER BY uo.position ASC
   `).all();
 
-  const technicians: TechWithAssignments[] = db.prepare('SELECT * FROM technicians WHERE is_active = 1 ORDER BY name ASC').all();
+  const technicians: TechWithAssignments[] = db.prepare('SELECT * FROM technicians WHERE is_active = 1 ORDER BY COALESCE(position, 9999) ASC, name ASC').all();
 
   for (const tech of technicians) {
     tech.assignments = db.prepare(`

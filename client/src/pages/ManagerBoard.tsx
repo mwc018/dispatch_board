@@ -20,6 +20,7 @@ function collisionDetection(args: Parameters<typeof pointerWithin>[0]) {
 }
 import { arrayMove } from '@dnd-kit/sortable';
 
+import { SortableContext, horizontalListSortingStrategy } from '@dnd-kit/sortable';
 import UnassignedQueue from '../components/UnassignedQueue';
 import TechColumn from '../components/TechColumn';
 import ServiceOrderCard from '../components/ServiceOrderCard';
@@ -42,6 +43,7 @@ import {
   deleteServiceOrder,
   addServiceOrder,
   clearAllServiceOrders,
+  reorderTechnicians,
 } from '../api/client';
 import { BoardState, DndCardItem, AddTechData, AddOrderData, DispatchAssignment } from '../types';
 
@@ -137,6 +139,16 @@ export default function ManagerBoard() {
 
     const activeDndId = String(active.id);
     const overDndId = String(over.id);
+
+    if (activeDndId.startsWith('tech_col_')) {
+      const fromIdx = board.technicians.findIndex((t) => `tech_col_${t.id}` === activeDndId);
+      const toIdx = board.technicians.findIndex((t) => `tech_col_${t.id}` === overDndId);
+      if (fromIdx === -1 || toIdx === -1 || fromIdx === toIdx) return;
+      const newTechs = arrayMove(board.technicians, fromIdx, toIdx);
+      setBoard((b) => b ? { ...b, technicians: newTechs } : b);
+      await reorderTechnicians(newTechs.map((t) => t.id));
+      return;
+    }
 
     const sourceContainer = findContainer(activeDndId);
     let targetContainer: string | null = overDndId;
@@ -361,18 +373,20 @@ export default function ManagerBoard() {
             onDelete={handleDelete}
           />
           <div className="flex flex-1 overflow-x-auto overflow-y-hidden gap-2 p-2 bg-[#0f1117]">
-            {board.technicians.map((tech) => (
-              <TechColumn
-                key={tech.id}
-                tech={tech}
-                allTechs={board.technicians}
-                onSetTime={handleSetTime}
-                onSetNotes={handleSetNotes}
-                onUnassign={handleUnassign}
-                onDeleteTech={handleDeleteTech}
-                highlightedSoId={recentlyDroppedSoId}
-              />
-            ))}
+            <SortableContext items={board.technicians.map((t) => `tech_col_${t.id}`)} strategy={horizontalListSortingStrategy}>
+              {board.technicians.map((tech) => (
+                <TechColumn
+                  key={tech.id}
+                  tech={tech}
+                  allTechs={board.technicians}
+                  onSetTime={handleSetTime}
+                  onSetNotes={handleSetNotes}
+                  onUnassign={handleUnassign}
+                  onDeleteTech={handleDeleteTech}
+                  highlightedSoId={recentlyDroppedSoId}
+                />
+              ))}
+            </SortableContext>
             {board.technicians.length === 0 && (
               <div className="flex items-center justify-center flex-1 text-slate-500 text-[14px]">
                 No technicians yet. Add one to start dispatching.

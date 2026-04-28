@@ -5,8 +5,17 @@ import { fetchCRMUsers } from '../services/zoho';
 const router = express.Router();
 
 router.get('/', (req: Request, res: Response) => {
-  const techs = db.prepare('SELECT * FROM technicians ORDER BY name ASC').all();
+  const techs = db.prepare('SELECT * FROM technicians ORDER BY COALESCE(position, 9999) ASC, name ASC').all();
   res.json(techs);
+});
+
+router.post('/reorder', (req: Request, res: Response) => {
+  const { ordered_ids } = req.body;
+  if (!Array.isArray(ordered_ids)) return res.status(400).json({ error: 'ordered_ids is required' });
+  for (let i = 0; i < ordered_ids.length; i++) {
+    db.prepare('UPDATE technicians SET position = ? WHERE id = ?').run([i, ordered_ids[i]]);
+  }
+  res.json({ success: true });
 });
 
 router.post('/', (req: Request, res: Response) => {

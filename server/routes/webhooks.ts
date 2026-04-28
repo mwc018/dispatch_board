@@ -22,7 +22,7 @@ router.post('/zoho', (req: Request, res: Response) => {
       if (!zohoId) continue;
 
       const subject = record.Subject || record.subject || 'Untitled Service Order';
-      const soNumber = record.Service_Order_Number || record.so_number || record.SO_Number || null;
+      const soNumber = record.serviceorder_number || record.historical_serviceorder_number || null;
       const accountName = record.account_name || record.Account_Name?.name || null;
       const firstName = record.contact_name_first || '';
       const lastName = record.contact_name_last || '';

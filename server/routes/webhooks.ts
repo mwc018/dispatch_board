@@ -3,24 +3,43 @@ import db from '../db/database';
 
 const router = express.Router();
 
-let lastPost: { timestamp: string; body: any } | null = null;
+interface WebhookLogEntry {
+  timestamp: string;
+  total: number;
+  created: number;
+  updated: number;
+  skipped: { zohoId: string | null; reason: string }[];
+  errors: { zohoId: string | null; error: string }[];
+}
 
-router.get('/last', (_req: Request, res: Response) => {
-  res.json(lastPost || { message: 'No POST received yet' });
+let lastLog: WebhookLogEntry | null = null;
+
+router.get('/log', (_req: Request, res: Response) => {
+  res.json(lastLog || { message: 'No webhook received yet' });
 });
 
 router.post('/zoho', (req: Request, res: Response) => {
-  lastPost = { timestamp: new Date().toISOString(), body: req.body };
-  try {
-    const payload = req.body;
-    const records: any[] = Array.isArray(payload) ? payload : payload.data || [payload];
-    let created = 0;
-    let updated = 0;
+  const payload = req.body;
+  const records: any[] = Array.isArray(payload) ? payload : payload.data || [payload];
 
-    for (const record of records) {
-      const zohoId = record.id || record.ID;
-      if (!zohoId) continue;
+  const log: WebhookLogEntry = {
+    timestamp: new Date().toISOString(),
+    total: records.length,
+    created: 0,
+    updated: 0,
+    skipped: [],
+    errors: [],
+  };
 
+  for (const record of records) {
+    const zohoId = record.id || record.ID || null;
+
+    if (!zohoId) {
+      log.skipped.push({ zohoId: null, reason: 'missing zoho id' });
+      continue;
+    }
+
+    try {
       const subject = record.Subject || record.subject || 'Untitled Service Order';
       const soNumber = record.serviceorder_number || record.historical_serviceorder_number || null;
       const accountName = record.account_name || record.Account_Name?.name || null;
@@ -48,23 +67,26 @@ router.post('/zoho', (req: Request, res: Response) => {
             .run([existing.id]);
           db.prepare('DELETE FROM unassigned_order WHERE service_order_id = ?').run([existing.id]);
         }
-        updated++;
-      } else if (!isClosed) {
+        log.updated++;
+      } else if (isClosed) {
+        log.skipped.push({ zohoId: String(zohoId), reason: `status is Closed — not added` });
+      } else {
         const result = db.prepare(
           `INSERT INTO service_orders (zoho_id, so_number, subject, account_name, customer_name, address, description, phone, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'unassigned')`
         ).run([String(zohoId), soNumber, subject, accountName, customerName, address, description, phone]);
         const maxPos = db.prepare('SELECT COALESCE(MAX(position), -1) as m FROM unassigned_order').get() as any;
         db.prepare('INSERT OR IGNORE INTO unassigned_order (service_order_id, position) VALUES (?, ?)').run([result.lastInsertRowid, maxPos.m + 1]);
-        created++;
+        log.created++;
       }
+    } catch (err: any) {
+      log.errors.push({ zohoId: zohoId ? String(zohoId) : null, error: err.message });
+      console.error(`[Webhook] Error processing record ${zohoId}:`, err.message);
     }
-
-    req.app.get('io')?.emit('board:refresh');
-    res.json({ success: true, created, updated });
-  } catch (err) {
-    console.error('[Webhook] Error:', err);
-    res.status(500).json({ error: 'Webhook processing failed' });
   }
+
+  lastLog = log;
+  req.app.get('io')?.emit('board:refresh');
+  res.json({ success: true, created: log.created, updated: log.updated, skipped: log.skipped.length, errors: log.errors.length });
 });
 
 export default router;

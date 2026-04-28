@@ -14,10 +14,18 @@ export default function UnassignedQueue({ orders, onDelete }: UnassignedQueuePro
   const [search, setSearch] = useState('');
 
   const filtered = search.trim()
-    ? orders.filter((o) =>
-        (o.so_number || '').toLowerCase().includes(search.toLowerCase()) ||
-        (o.subject || '').toLowerCase().includes(search.toLowerCase())
-      )
+    ? orders.filter((o) => {
+        const q = search.toLowerCase();
+        return (
+          (o.so_number || '').toLowerCase().includes(q) ||
+          (o.subject || '').toLowerCase().includes(q) ||
+          (o.account_name || '').toLowerCase().includes(q) ||
+          (o.customer_name || '').toLowerCase().includes(q) ||
+          (o.address || '').toLowerCase().includes(q) ||
+          (o.phone || '').toLowerCase().includes(q) ||
+          (o.description || '').toLowerCase().includes(q)
+        );
+      })
     : orders;
 
   const items = filtered.map((o) => ({ ...o, dndId: `so_${o.id}` }));

@@ -53,6 +53,7 @@ export default function TechColumn({ tech, allTechs, onSetTime, onSetNotes, onUn
       address: a.address,
       phone: a.phone,
       description: a.description,
+      work_requested: a.work_requested,
       priority: a.priority,
       scheduled_time: a.scheduled_time,
       notes: a.notes,
@@ -103,6 +104,7 @@ export default function TechColumn({ tech, allTechs, onSetTime, onSetNotes, onUn
               scheduledTime={item.scheduled_time}
               assignmentId={item.assignmentId}
               notes={item.notes}
+              workRequested={item.work_requested}
               coAssignees={item.coAssignees}
               highlighted={highlightedSoId === item.id}
               onSetTime={onSetTime}

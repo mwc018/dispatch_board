@@ -15,6 +15,7 @@ for (const ext of ['-wal', '-shm', '.lock']) {
 const db: any = new Database(DB_PATH);
 db.exec('PRAGMA busy_timeout = 10000');
 try { db.exec('ALTER TABLE service_orders ADD COLUMN so_number TEXT'); } catch (_) {}
+try { db.exec('ALTER TABLE service_orders ADD COLUMN work_requested TEXT'); } catch (_) {}
 try { db.exec('ALTER TABLE technicians ADD COLUMN position INTEGER'); } catch (_) {}
 db.exec('PRAGMA journal_mode = DELETE');
 db.exec('PRAGMA foreign_keys = ON');
@@ -29,6 +30,7 @@ db.exec(`
     customer_name TEXT,
     address TEXT,
     description TEXT,
+    work_requested TEXT,
     phone TEXT,
     status TEXT DEFAULT 'unassigned',
     created_at TEXT DEFAULT (datetime('now')),

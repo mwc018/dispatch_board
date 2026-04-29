@@ -19,7 +19,7 @@ function getBoardState(date?: string): BoardState {
 
   for (const tech of technicians) {
     tech.assignments = db.prepare(`
-      SELECT da.*, so.zoho_id, so.so_number, so.subject, so.account_name, so.customer_name, so.address, so.description, so.phone, so.status
+      SELECT da.*, so.zoho_id, so.so_number, so.subject, so.account_name, so.customer_name, so.address, so.description, so.work_requested, so.phone, so.status
       FROM dispatch_assignments da
       JOIN service_orders so ON so.id = da.service_order_id
       WHERE da.technician_id = ? AND da.dispatch_date = ?

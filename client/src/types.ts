@@ -7,6 +7,7 @@ export interface ServiceOrder {
   customer_name: string | null;
   address: string | null;
   description: string | null;
+  work_requested: string | null;
   phone: string | null;
   status: string;
   position?: number;
@@ -41,6 +42,7 @@ export interface DispatchAssignment {
   customer_name: string | null;
   address: string | null;
   description: string | null;
+  work_requested: string | null;
   phone: string | null;
   status: string;
 }
@@ -73,6 +75,7 @@ export interface DndCardItem {
   address: string | null;
   phone: string | null;
   description: string | null;
+  work_requested?: string | null;
   priority?: number;
   scheduled_time?: string | null;
   notes?: string | null;

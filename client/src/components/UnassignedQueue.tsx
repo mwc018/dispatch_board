@@ -93,6 +93,7 @@ export default function UnassignedQueue({ orders, onDelete }: UnassignedQueuePro
             <ServiceOrderCard
               key={order.dndId}
               item={order}
+              workRequested={order.work_requested}
               onDelete={onDelete}
             />
           ))}

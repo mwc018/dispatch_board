@@ -14,6 +14,7 @@ interface ServiceOrderCardProps {
   onDelete?: (id: number) => void;
   compact?: boolean;
   notes?: string | null;
+  workRequested?: string | null;
   coAssignees?: string[];
   highlighted?: boolean;
   isCompleted?: boolean;
@@ -30,6 +31,7 @@ export default function ServiceOrderCard({
   onDelete,
   compact,
   notes,
+  workRequested,
   coAssignees,
   highlighted,
   isCompleted,
@@ -128,6 +130,12 @@ export default function ServiceOrderCard({
         {item.description && (
           <div className="text-[11px] text-slate-400 mt-1 pt-1 border-t border-[#2a2f45] whitespace-pre-wrap leading-[1.4]">
             {item.description}
+          </div>
+        )}
+
+        {workRequested && (
+          <div className="text-[11px] text-cyan-300/80 mt-1 pt-1 border-t border-[#2a2f45] whitespace-pre-wrap leading-[1.4]">
+            {workRequested}
           </div>
         )}
 

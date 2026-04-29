@@ -51,6 +51,7 @@ router.post('/zoho', (req: Request, res: Response) => {
       const addressParts = [record.billing_street, record.billing_city, record.billing_state, record.billing_code].filter(Boolean);
       const address = addressParts.length ? addressParts.join(', ') : null;
       const description = record.description || record.Description || null;
+      const workRequested = record.work_requested || null;
       const phone = record.phone || record.Phone || record.Mobile || null;
 
       const status = record.Status || record.status || null;
@@ -61,8 +62,8 @@ router.post('/zoho', (req: Request, res: Response) => {
       if (existing) {
         const newStatus = isClosed ? 'completed' : existing.status;
         db.prepare(
-          `UPDATE service_orders SET so_number = ?, subject = ?, account_name = ?, customer_name = ?, address = ?, description = ?, phone = ?, status = ?, updated_at = datetime('now') WHERE zoho_id = ?`
-        ).run([soNumber, subject, accountName, customerName, address, description, phone, newStatus, String(zohoId)]);
+          `UPDATE service_orders SET so_number = ?, subject = ?, account_name = ?, customer_name = ?, address = ?, description = ?, work_requested = ?, phone = ?, status = ?, updated_at = datetime('now') WHERE zoho_id = ?`
+        ).run([soNumber, subject, accountName, customerName, address, description, workRequested, phone, newStatus, String(zohoId)]);
 
         if (isClosed) {
           db.prepare(`UPDATE dispatch_assignments SET is_completed = 1, updated_at = datetime('now') WHERE service_order_id = ?`)
@@ -74,8 +75,8 @@ router.post('/zoho', (req: Request, res: Response) => {
         log.skipped.push({ zohoId: String(zohoId), reason: `status is Closed — not added` });
       } else {
         const result = db.prepare(
-          `INSERT INTO service_orders (zoho_id, so_number, subject, account_name, customer_name, address, description, phone, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'unassigned')`
-        ).run([String(zohoId), soNumber, subject, accountName, customerName, address, description, phone]);
+          `INSERT INTO service_orders (zoho_id, so_number, subject, account_name, customer_name, address, description, work_requested, phone, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'unassigned')`
+        ).run([String(zohoId), soNumber, subject, accountName, customerName, address, description, workRequested, phone]);
         db.prepare('UPDATE unassigned_order SET position = position + 1').run();
         db.prepare('INSERT OR IGNORE INTO unassigned_order (service_order_id, position) VALUES (?, 0)').run([result.lastInsertRowid]);
         log.created++;

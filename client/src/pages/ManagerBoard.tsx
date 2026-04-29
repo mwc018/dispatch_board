@@ -4,7 +4,6 @@ import {
   DndContext,
   DragOverlay,
   PointerSensor,
-  TouchSensor,
   useSensor,
   useSensors,
   pointerWithin,
@@ -104,8 +103,7 @@ export default function ManagerBoard() {
   );
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } })
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
   );
 
   function findContainer(dndId: string): string | null {
@@ -306,65 +304,59 @@ export default function ManagerBoard() {
   if (!board) return null;
 
   return (
-    <div className="flex flex-col h-dvh bg-[#0f1117] overflow-hidden">
+    <div className="flex flex-col h-screen bg-[#0f1117] overflow-hidden">
       {/* Board Header */}
-      <div className="flex items-center justify-between px-2 sm:px-4 py-2 sm:py-2.5 bg-[#1a1d27] border-b border-[#2a2f45] flex-shrink-0 gap-2">
-        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-          <h1 className="text-sm sm:text-base font-bold text-slate-200 tracking-wide whitespace-nowrap">Dispatch Board</h1>
+      <div className="flex items-center justify-between px-4 py-2.5 bg-[#1a1d27] border-b border-[#2a2f45] flex-shrink-0">
+        <div className="flex items-center gap-3">
+          <h1 className="text-base font-bold text-slate-200 tracking-wide">Dispatch Board</h1>
           {socketFlash && (
-            <span className="text-[11px] text-blue-400 animate-pulse hidden sm:inline">● Updated</span>
+            <span className="text-[11px] text-blue-400 animate-pulse">● Updated</span>
           )}
         </div>
-        <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap justify-end">
+        {user && (
+          <div className="flex items-center gap-2.5 ml-2 pl-3 border-l border-[#2a2f45]">
+            <span className="text-[13px] text-slate-400">{user.name}</span>
+            <button
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-transparent border border-[#2a2f45] text-slate-500 hover:bg-[#21253a] hover:text-slate-400 rounded text-[12px] font-medium cursor-pointer transition-colors"
+              onClick={logout}
+            >
+              Sign out
+            </button>
+          </div>
+        )}
+        <div className="flex items-center gap-2">
           <input
             type="date"
-            className="px-2 py-1 border border-[#2a2f45] rounded text-[12px] sm:text-[13px] text-slate-200 bg-[#21253a] focus:outline-none focus:border-blue-500 [color-scheme:dark] w-[130px] sm:w-auto"
+            className="px-2.5 py-1 border border-[#2a2f45] rounded text-[13px] text-slate-200 bg-[#21253a] focus:outline-none focus:border-blue-500 [color-scheme:dark]"
             value={date}
             onChange={(e) => setDate(e.target.value)}
           />
           <button
-            className="inline-flex items-center justify-center px-2 sm:px-2.5 py-1 bg-[#21253a] border border-[#2a2f45] text-slate-200 hover:bg-[#2a2f45] rounded text-[12px] font-medium cursor-pointer transition-colors"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#21253a] border border-[#2a2f45] text-slate-200 hover:bg-[#2a2f45] rounded text-[12px] font-medium cursor-pointer transition-colors"
             onClick={() => setAddOrderOpen(true)}
-            title="Add Service Order"
           >
-            <span className="hidden sm:inline">+ Service Order</span>
-            <span className="sm:hidden">+ Order</span>
+            + Service Order
           </button>
           <button
-            className="inline-flex items-center justify-center px-2 sm:px-2.5 py-1 bg-[#21253a] border border-[#2a2f45] text-slate-200 hover:bg-[#2a2f45] rounded text-[12px] font-medium cursor-pointer transition-colors"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#21253a] border border-[#2a2f45] text-slate-200 hover:bg-[#2a2f45] rounded text-[12px] font-medium cursor-pointer transition-colors"
             onClick={() => setAddTechOpen(true)}
-            title="Add Technician"
           >
-            <span className="hidden sm:inline">+ Technician</span>
-            <span className="sm:hidden">+ Tech</span>
+            + Technician
           </button>
           <button
-            className="inline-flex items-center justify-center px-2 sm:px-2.5 py-1 bg-transparent border border-[#2a2f45] text-slate-500 hover:bg-[#21253a] hover:text-slate-400 rounded text-[12px] cursor-pointer transition-colors"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-transparent border border-[#2a2f45] text-slate-500 hover:bg-[#21253a] hover:text-slate-400 rounded text-[12px] cursor-pointer transition-colors"
             onClick={handleSyncZoho}
             title="Sync technicians from Zoho CRM"
           >
-            <span className="hidden sm:inline">⟳ Sync Zoho Techs</span>
-            <span className="sm:hidden">⟳ Sync</span>
+            ⟳ Sync Zoho Techs
           </button>
           <button
-            className="inline-flex items-center justify-center px-2 sm:px-2.5 py-1 bg-transparent border border-red-900/50 text-red-500/70 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/50 rounded text-[12px] cursor-pointer transition-colors"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-transparent border border-red-900/50 text-red-500/70 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/50 rounded text-[12px] cursor-pointer transition-colors"
             onClick={handleClearAllOrders}
-            title="Clear all service orders"
+            title="Delete all service orders"
           >
-            <span className="hidden sm:inline">Clear All Orders</span>
-            <span className="sm:hidden">Clear</span>
+            Clear All Orders
           </button>
-          {user && (
-            <div className="flex items-center gap-1.5 pl-2 border-l border-[#2a2f45]">
-              <span className="text-[12px] text-slate-400 hidden sm:inline">{user.name}</span>
-              <button
-                className="inline-flex items-center px-2 py-1 bg-transparent border border-[#2a2f45] text-slate-500 hover:bg-[#21253a] hover:text-slate-400 rounded text-[12px] font-medium cursor-pointer transition-colors whitespace-nowrap"
-                onClick={logout}
-              >
-                Sign out
-              </button>
-            </div>
-          )}
         </div>
       </div>
 
@@ -375,7 +367,7 @@ export default function ManagerBoard() {
         onDragEnd={handleDragEnd}
       >
         {/* Board Layout */}
-        <div className="flex flex-1 overflow-hidden min-h-0">
+        <div className="flex overflow-hidden" style={{ height: 'calc(100vh - 53px)' }}>
           <UnassignedQueue
             orders={board.unassigned}
             onDelete={handleDelete}

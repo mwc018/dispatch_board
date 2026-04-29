@@ -81,7 +81,7 @@ export default function UnassignedQueue({ orders, onDelete }: UnassignedQueuePro
       </div>
       <div
         ref={setNodeRef}
-        className={`flex-1 h-0 overflow-y-auto p-2 flex flex-col gap-[5px] min-h-[60px] transition-all duration-150${isOver ? ' bg-blue-500/15 outline-dashed outline-2 outline-blue-500/60 outline-offset-[-4px] rounded' : ''}`}
+        className={`flex-1 overflow-y-auto p-2 flex flex-col gap-[5px] min-h-[60px] transition-all duration-150${isOver ? ' bg-blue-500/15 outline-dashed outline-2 outline-blue-500/60 outline-offset-[-4px] rounded' : ''}`}
       >
         <SortableContext items={items.map((i) => i.dndId)} strategy={verticalListSortingStrategy}>
           {items.length === 0 && (

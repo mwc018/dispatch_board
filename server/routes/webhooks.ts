@@ -10,6 +10,7 @@ interface WebhookLogEntry {
   updated: number;
   skipped: { zohoId: string | null; reason: string }[];
   errors: { zohoId: string | null; error: string }[];
+  raw: any;
 }
 
 let lastLog: WebhookLogEntry | null = null;
@@ -29,6 +30,7 @@ router.post('/zoho', (req: Request, res: Response) => {
     updated: 0,
     skipped: [],
     errors: [],
+    raw: payload,
   };
 
   for (const record of records) {

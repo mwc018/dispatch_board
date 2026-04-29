@@ -74,8 +74,8 @@ router.post('/zoho', (req: Request, res: Response) => {
         const result = db.prepare(
           `INSERT INTO service_orders (zoho_id, so_number, subject, account_name, customer_name, address, description, phone, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'unassigned')`
         ).run([String(zohoId), soNumber, subject, accountName, customerName, address, description, phone]);
-        const maxPos = db.prepare('SELECT COALESCE(MAX(position), -1) as m FROM unassigned_order').get() as any;
-        db.prepare('INSERT OR IGNORE INTO unassigned_order (service_order_id, position) VALUES (?, ?)').run([result.lastInsertRowid, maxPos.m + 1]);
+        db.prepare('UPDATE unassigned_order SET position = position + 1').run();
+        db.prepare('INSERT OR IGNORE INTO unassigned_order (service_order_id, position) VALUES (?, 0)').run([result.lastInsertRowid]);
         log.created++;
       }
     } catch (err: any) {

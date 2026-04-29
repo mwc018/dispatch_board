@@ -67,6 +67,9 @@ export const syncZohoTechs = (): Promise<{ success: boolean; added: number; tota
 export const reorderTechnicians = (ordered_ids: number[]): Promise<{ success: boolean }> =>
   api.post('/technicians/reorder', { ordered_ids }).then((r) => r.data);
 
+export const sortUnassignedBySO = (date: string): Promise<BoardState> =>
+  api.post('/dispatch/sort-unassigned-by-so', { date }).then((r) => r.data);
+
 export const addServiceOrder = (data: AddOrderData): Promise<ServiceOrder> =>
   api.post('/service-orders', data).then((r) => r.data);
 

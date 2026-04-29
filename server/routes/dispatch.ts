@@ -145,6 +145,13 @@ router.post('/unassign', async (req: Request, res: Response) => {
   if (technician_id) {
     db.prepare('DELETE FROM dispatch_assignments WHERE service_order_id = ? AND technician_id = ? AND dispatch_date = ?')
       .run([service_order_id, technician_id, dispatchDate]);
+    // Renumber remaining priorities for this tech on this date
+    const remaining_assignments = db.prepare(
+      'SELECT id FROM dispatch_assignments WHERE technician_id = ? AND dispatch_date = ? ORDER BY priority ASC'
+    ).all([technician_id, dispatchDate]) as any[];
+    remaining_assignments.forEach((a, i) => {
+      db.prepare('UPDATE dispatch_assignments SET priority = ? WHERE id = ?').run([i + 1, a.id]);
+    });
   } else {
     db.prepare('DELETE FROM dispatch_assignments WHERE service_order_id = ? AND dispatch_date = ?')
       .run([service_order_id, dispatchDate]);

@@ -12,7 +12,7 @@ function getBoardState(date?: string): BoardState {
     SELECT so.*, uo.position
     FROM service_orders so
     JOIN unassigned_order uo ON uo.service_order_id = so.id
-    ORDER BY uo.position ASC
+    ORDER BY CAST(REPLACE(so.so_number, 'SO-', '') AS INTEGER) DESC NULLS LAST, so.created_at DESC
   `).all();
 
   const technicians: TechWithAssignments[] = db.prepare('SELECT * FROM technicians WHERE is_active = 1 ORDER BY COALESCE(position, 9999) ASC, name ASC').all();
@@ -179,45 +179,7 @@ router.post('/unassign', async (req: Request, res: Response) => {
   res.json(board);
 });
 
-router.post('/reorder-unassigned', (req: Request, res: Response) => {
-  const { ordered_ids } = req.body;
-  if (!Array.isArray(ordered_ids)) return res.status(400).json({ error: 'ordered_ids must be an array' });
 
-  const update = db.prepare('UPDATE unassigned_order SET position = ? WHERE service_order_id = ?');
-  db.exec('BEGIN');
-  try {
-    ordered_ids.forEach((id: number, index: number) => update.run([index, id]));
-    db.exec('COMMIT');
-  } catch (e) {
-    db.exec('ROLLBACK');
-    throw e;
-  }
-
-  const board = getBoardState(req.body.date);
-  req.app.get('io')?.emit('board:updated', board);
-  res.json(board);
-});
-
-router.post('/sort-unassigned-by-so', (req: Request, res: Response) => {
-  const orders = db.prepare(`
-    SELECT uo.service_order_id, so.so_number
-    FROM unassigned_order uo
-    JOIN service_orders so ON so.id = uo.service_order_id
-  `).all() as any[];
-
-  orders.sort((a, b) => {
-    const numA = parseInt((a.so_number || '').replace(/\D/g, ''), 10) || 0;
-    const numB = parseInt((b.so_number || '').replace(/\D/g, ''), 10) || 0;
-    return numB - numA;
-  });
-
-  const update = db.prepare('UPDATE unassigned_order SET position = ? WHERE service_order_id = ?');
-  orders.forEach((o, i) => update.run([i, o.service_order_id]));
-
-  const board = getBoardState(req.body.date);
-  req.app.get('io')?.emit('board:updated', board);
-  res.json(board);
-});
 
 router.post('/reorder-tech', async (req: Request, res: Response) => {
   const { technician_id, date, ordered_assignment_ids } = req.body;

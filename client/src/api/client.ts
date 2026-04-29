@@ -28,8 +28,6 @@ export const unassignOrder = (service_order_id: number, date: string, position?:
 export const alsoAssign = (service_order_id: number, technician_id: number, date: string): Promise<BoardState> =>
   api.post('/dispatch/also-assign', { service_order_id, technician_id, date }).then((r) => r.data);
 
-export const reorderUnassigned = (ordered_ids: number[], date: string): Promise<BoardState> =>
-  api.post('/dispatch/reorder-unassigned', { ordered_ids, date }).then((r) => r.data);
 
 export const reorderTech = (technician_id: number, date: string, ordered_assignment_ids: number[]): Promise<BoardState> =>
   api.post('/dispatch/reorder-tech', { technician_id, date, ordered_assignment_ids }).then((r) => r.data);
@@ -67,8 +65,6 @@ export const syncZohoTechs = (): Promise<{ success: boolean; added: number; tota
 export const reorderTechnicians = (ordered_ids: number[]): Promise<{ success: boolean }> =>
   api.post('/technicians/reorder', { ordered_ids }).then((r) => r.data);
 
-export const sortUnassignedBySO = (date: string): Promise<BoardState> =>
-  api.post('/dispatch/sort-unassigned-by-so', { date }).then((r) => r.data);
 
 export const addServiceOrder = (data: AddOrderData): Promise<ServiceOrder> =>
   api.post('/service-orders', data).then((r) => r.data);

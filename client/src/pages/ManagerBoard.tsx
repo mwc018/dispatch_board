@@ -33,7 +33,6 @@ import {
   getBoard,
   unassignOrder,
   alsoAssign,
-  reorderUnassigned,
   reorderTech,
   setTime,
   setNotes,
@@ -44,7 +43,6 @@ import {
   addServiceOrder,
   clearAllServiceOrders,
   reorderTechnicians,
-  sortUnassignedBySO,
 } from '../api/client';
 import { BoardState, DndCardItem, AddTechData, AddOrderData, DispatchAssignment } from '../types';
 
@@ -161,13 +159,7 @@ export default function ManagerBoard() {
 
     if (sourceContainer === targetContainer) {
       if (sourceContainer === 'unassigned') {
-        const ids = board.unassigned.map((o) => o.id);
-        const fromIdx = board.unassigned.findIndex((o) => `so_${o.id}` === activeDndId);
-        const toIdx = board.unassigned.findIndex((o) => `so_${o.id}` === overDndId);
-        if (fromIdx === -1 || toIdx === -1 || fromIdx === toIdx) return;
-        const newOrderedIds = arrayMove(ids, fromIdx, toIdx);
-        setBoard((b) => b ? { ...b, unassigned: arrayMove(b.unassigned, fromIdx, toIdx) } : b);
-        await reorderUnassigned(newOrderedIds, date);
+        return;
       } else {
         const techId = parseInt(sourceContainer.replace('tech_', ''));
         const tech = board.technicians.find((t) => t.id === techId);
@@ -277,12 +269,6 @@ export default function ManagerBoard() {
     toast.success(`Synced ${result.added} new technicians from Zoho`);
   };
 
-  const handleSortBySO = async () => {
-    const data = await sortUnassignedBySO(date);
-    setBoard(data);
-    toast.success('Orders sorted by SO number');
-  };
-
   const handleClearAllOrders = () => {
     toast.confirm('This will permanently delete ALL service orders and assignments. Are you sure?', async () => {
       await clearAllServiceOrders();
@@ -349,13 +335,6 @@ export default function ManagerBoard() {
             onClick={() => setAddTechOpen(true)}
           >
             + Technician
-          </button>
-          <button
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-transparent border border-[#2a2f45] text-slate-500 hover:bg-[#21253a] hover:text-slate-400 rounded text-[12px] cursor-pointer transition-colors"
-            onClick={handleSortBySO}
-            title="Sort open orders by SO number (newest first)"
-          >
-            ↓ Sort by SO#
           </button>
           <button
             className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-transparent border border-[#2a2f45] text-slate-500 hover:bg-[#21253a] hover:text-slate-400 rounded text-[12px] cursor-pointer transition-colors"

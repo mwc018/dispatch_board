@@ -375,7 +375,7 @@ export default function ManagerBoard() {
         onDragEnd={handleDragEnd}
       >
         {/* Board Layout */}
-        <div className="flex overflow-hidden" style={{ height: 'calc(100vh - 53px)' }}>
+        <div className="flex flex-1 overflow-hidden min-h-0">
           <UnassignedQueue
             orders={board.unassigned}
             onDelete={handleDelete}

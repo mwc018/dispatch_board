@@ -306,7 +306,7 @@ export default function ManagerBoard() {
   if (!board) return null;
 
   return (
-    <div className="flex flex-col h-screen bg-[#0f1117] overflow-hidden">
+    <div className="flex flex-col h-dvh bg-[#0f1117] overflow-hidden">
       {/* Board Header */}
       <div className="flex items-center justify-between px-2 sm:px-4 py-2 sm:py-2.5 bg-[#1a1d27] border-b border-[#2a2f45] flex-shrink-0 gap-2">
         <div className="flex items-center gap-2 sm:gap-3 min-w-0">

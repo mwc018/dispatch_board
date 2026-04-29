@@ -86,7 +86,7 @@ export default function TechColumn({ tech, allTechs, onSetTime, onSetNotes, onUn
       </div>
       <div
         ref={setDropRef}
-        className={`flex-1 overflow-y-auto p-2 flex flex-col gap-[5px] min-h-[60px] transition-all duration-150${isOver ? ' bg-blue-500/15 outline-dashed outline-2 outline-blue-500/60 outline-offset-[-4px] rounded scale-[1.01]' : ''}`}
+        className={`flex-1 h-0 overflow-y-auto p-2 flex flex-col gap-[5px] min-h-[60px] transition-all duration-150${isOver ? ' bg-blue-500/15 outline-dashed outline-2 outline-blue-500/60 outline-offset-[-4px] rounded scale-[1.01]' : ''}`}
       >
         <SortableContext items={items.map((i) => i.dndId)} strategy={verticalListSortingStrategy}>
           {items.length === 0 && (

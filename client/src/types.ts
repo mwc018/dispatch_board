@@ -65,6 +65,7 @@ export interface DndCardItem {
   dndId: string;
   id: number;
   assignmentId?: number;
+  zoho_id?: string | null;
   so_number?: string | null;
   subject: string;
   account_name: string | null;

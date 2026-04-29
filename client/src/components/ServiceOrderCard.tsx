@@ -79,6 +79,18 @@ export default function ServiceOrderCard({
             className="ml-auto flex items-center gap-0.5 flex-shrink-0"
             onPointerDown={(e) => e.stopPropagation()}
           >
+            {item.zoho_id && (
+              <a
+                href={`https://crm.zoho.com/crm/org760244824/tab/SalesOrders/${item.zoho_id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="[@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 transition-opacity bg-transparent border border-transparent px-1 py-px rounded text-[11px] text-slate-500 hover:text-blue-400 hover:border-blue-500 hover:bg-blue-500/10 leading-none"
+                title="Open in Zoho CRM"
+                onClick={(e) => e.stopPropagation()}
+              >
+                ↗
+              </a>
+            )}
             {onUnassign && (
               <button
                 className="[@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 transition-opacity bg-transparent border border-transparent px-1 py-px rounded text-[11px] text-slate-500 hover:text-red-400 hover:border-red-500 hover:bg-red-500/10 active:text-red-400 active:border-red-500 leading-none"

@@ -56,7 +56,7 @@ router.post('/zoho', (req: Request, res: Response) => {
       const status = record.Status || record.status || null;
       const isClosed = status === 'Closed';
 
-      const existing = db.prepare('SELECT id FROM service_orders WHERE zoho_id = ?').get([String(zohoId)]) as any;
+      const existing = db.prepare('SELECT id, status FROM service_orders WHERE zoho_id = ?').get([String(zohoId)]) as any;
 
       if (existing) {
         const newStatus = isClosed ? 'completed' : existing.status;

@@ -263,6 +263,7 @@ export default function ManagerBoard() {
     }
     await alsoAssign(assignModal.serviceOrderId, techId, targetDate);
     setAssignModal(null);
+    setDate(targetDate);
   };
 
   const handleDelete = async (serviceOrderId: number) => {

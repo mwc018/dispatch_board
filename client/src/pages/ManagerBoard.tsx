@@ -259,9 +259,13 @@ export default function ManagerBoard() {
   const handleAssignSubmit = async (techId: number, targetDate: string) => {
     if (!assignModal) return;
     if (assignModal.fromTechId && assignModal.fromDate) {
+      // Moving from one tech to another — unassign first, then assign
       await unassignOrder(assignModal.serviceOrderId, assignModal.fromDate, undefined, assignModal.fromTechId);
+      await assignOrder({ service_order_id: assignModal.serviceOrderId, technician_id: techId, date: targetDate });
+    } else {
+      // From unassigned queue — keep it in the queue, just add the tech assignment
+      await alsoAssign(assignModal.serviceOrderId, techId, targetDate);
     }
-    await assignOrder({ service_order_id: assignModal.serviceOrderId, technician_id: techId, date: targetDate });
     setAssignModal(null);
   };
 

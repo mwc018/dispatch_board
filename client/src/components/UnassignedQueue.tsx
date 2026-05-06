@@ -2,14 +2,15 @@ import React, { useState } from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import ServiceOrderCard from './ServiceOrderCard';
-import { ServiceOrder } from '../types';
+import { ServiceOrder, DndCardItem } from '../types';
 
 interface UnassignedQueueProps {
   orders: ServiceOrder[];
   onDelete: (id: number) => void;
+  onAssignTo: (item: DndCardItem) => void;
 }
 
-export default function UnassignedQueue({ orders, onDelete }: UnassignedQueueProps) {
+export default function UnassignedQueue({ orders, onDelete, onAssignTo }: UnassignedQueueProps) {
   const { setNodeRef, isOver } = useDroppable({ id: 'unassigned' });
   const [search, setSearch] = useState('');
   const [collapsed, setCollapsed] = useState(false);
@@ -95,6 +96,7 @@ export default function UnassignedQueue({ orders, onDelete }: UnassignedQueuePro
               item={order}
               workRequested={order.work_requested}
               onDelete={onDelete}
+              onAssignTo={() => onAssignTo(order)}
             />
           ))}
         </SortableContext>

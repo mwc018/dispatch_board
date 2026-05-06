@@ -8,14 +8,16 @@ import { TechWithAssignments, DndCardItem } from '../types';
 interface TechColumnProps {
   tech: TechWithAssignments;
   allTechs: TechWithAssignments[];
+  boardDate: string;
   onSetTime: (assignmentId: number | undefined, scheduledTime: string | null | undefined) => void;
   onSetNotes: (assignmentId: number | undefined, notes: string | null | undefined) => void;
   onUnassign: (id: number, techId: number) => void;
   onDeleteTech: (techId: number) => void;
+  onAssignTo: (item: DndCardItem, fromTechId: number, fromDate: string) => void;
   highlightedSoId?: number | null;
 }
 
-export default function TechColumn({ tech, allTechs, onSetTime, onSetNotes, onUnassign, onDeleteTech, highlightedSoId }: TechColumnProps) {
+export default function TechColumn({ tech, allTechs, boardDate, onSetTime, onSetNotes, onUnassign, onDeleteTech, onAssignTo, highlightedSoId }: TechColumnProps) {
   const { setNodeRef: setDropRef, isOver } = useDroppable({ id: `tech_${tech.id}` });
 
   const {
@@ -110,6 +112,7 @@ export default function TechColumn({ tech, allTechs, onSetTime, onSetNotes, onUn
               onSetTime={onSetTime}
               onSetNotes={onSetNotes}
               onUnassign={(id) => onUnassign(id, tech.id)}
+              onAssignTo={() => onAssignTo(item, tech.id, boardDate)}
               isCompleted={!!item.is_completed}
             />
           ))}

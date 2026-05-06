@@ -27,10 +27,12 @@ import ServiceOrderCard from '../components/ServiceOrderCard';
 import TimeModal from '../components/TimeModal';
 import NotesModal from '../components/NotesModal';
 import AddTechModal from '../components/AddTechModal';
+import AssignModal from '../components/AssignModal';
 import { useSocket } from '../hooks/useSocket';
 import { useToast } from '../components/Toast';
 import {
   getBoard,
+  assignOrder,
   unassignOrder,
   alsoAssign,
   reorderTech,
@@ -68,6 +70,7 @@ export default function ManagerBoard() {
   const [activeItem, setActiveItem] = useState<DndCardItem | null>(null);
   const [timeModal, setTimeModal] = useState<TimeModalState | null>(null);
   const [notesModal, setNotesModal] = useState<NotesModalState | null>(null);
+  const [assignModal, setAssignModal] = useState<{ serviceOrderId: number; label: string; fromTechId?: number; fromDate?: string } | null>(null);
   const [addTechOpen, setAddTechOpen] = useState(false);
   const [addOrderOpen, setAddOrderOpen] = useState(false);
   const [newOrder, setNewOrder] = useState<AddOrderData>({ subject: '', customer_name: '', address: '', phone: '', description: '' });
@@ -244,6 +247,24 @@ export default function ManagerBoard() {
     await unassignOrder(serviceOrderId, date, undefined, techId);
   };
 
+  const handleOpenAssignModal = (item: DndCardItem, fromTechId?: number, fromDate?: string) => {
+    setAssignModal({
+      serviceOrderId: item.id,
+      label: [item.so_number, item.subject].filter(Boolean).join(' – '),
+      fromTechId,
+      fromDate,
+    });
+  };
+
+  const handleAssignSubmit = async (techId: number, targetDate: string) => {
+    if (!assignModal) return;
+    if (assignModal.fromTechId && assignModal.fromDate) {
+      await unassignOrder(assignModal.serviceOrderId, assignModal.fromDate, undefined, assignModal.fromTechId);
+    }
+    await assignOrder({ service_order_id: assignModal.serviceOrderId, technician_id: techId, date: targetDate });
+    setAssignModal(null);
+  };
+
   const handleDelete = async (serviceOrderId: number) => {
     toast.confirm('Remove this service order from the board?', async () => {
       await deleteServiceOrder(serviceOrderId);
@@ -374,6 +395,7 @@ export default function ManagerBoard() {
           <UnassignedQueue
             orders={board.unassigned}
             onDelete={handleDelete}
+            onAssignTo={(item) => handleOpenAssignModal(item)}
           />
           <div className="flex flex-1 overflow-x-auto overflow-y-hidden gap-2 p-2 bg-[#0f1117]">
             <SortableContext items={board.technicians.map((t) => `tech_col_${t.id}`)} strategy={horizontalListSortingStrategy}>
@@ -382,10 +404,12 @@ export default function ManagerBoard() {
                   key={tech.id}
                   tech={tech}
                   allTechs={board.technicians}
+                  boardDate={date}
                   onSetTime={handleSetTime}
                   onSetNotes={handleSetNotes}
                   onUnassign={handleUnassign}
                   onDeleteTech={handleDeleteTech}
+                  onAssignTo={(item, fromTechId, fromDate) => handleOpenAssignModal(item, fromTechId, fromDate)}
                   highlightedSoId={recentlyDroppedSoId}
                 />
               ))}
@@ -424,6 +448,15 @@ export default function ManagerBoard() {
         onSave={handleAddTech}
         onClose={() => setAddTechOpen(false)}
       />
+      {assignModal && board && (
+        <AssignModal
+          label={assignModal.label}
+          techs={board.technicians}
+          defaultDate={date}
+          onClose={() => setAssignModal(null)}
+          onSubmit={handleAssignSubmit}
+        />
+      )}
       {/* Add Service Order modal */}
       <div
         className={`fixed inset-0 bg-black/65 flex items-center justify-center z-50 backdrop-blur-sm transition-opacity duration-200 ${addOrderOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}

@@ -12,6 +12,7 @@ interface ServiceOrderCardProps {
   onSetNotes?: (assignmentId: number | undefined, notes: string | null | undefined) => void;
   onUnassign?: (id: number) => void;
   onDelete?: (id: number) => void;
+  onAssignTo?: () => void;
   compact?: boolean;
   notes?: string | null;
   workRequested?: string | null;
@@ -29,6 +30,7 @@ export default function ServiceOrderCard({
   onSetNotes,
   onUnassign,
   onDelete,
+  onAssignTo,
   compact,
   notes,
   workRequested,
@@ -92,6 +94,15 @@ export default function ServiceOrderCard({
               >
                 ↗
               </a>
+            )}
+            {onAssignTo && (
+              <button
+                className="[@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 transition-opacity bg-transparent border border-transparent px-1 py-px rounded text-[11px] text-slate-500 hover:text-green-400 hover:border-green-500 hover:bg-green-500/10 active:text-green-400 active:border-green-500 leading-none"
+                onClick={(e) => { e.stopPropagation(); onAssignTo(); }}
+                title="Assign to technician"
+              >
+                ⊕
+              </button>
             )}
             {onUnassign && (
               <button

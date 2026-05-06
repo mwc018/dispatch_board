@@ -342,6 +342,11 @@ export default function ManagerBoard() {
         <div className="flex items-center gap-2">
           <button
             className="px-2 py-1 bg-[#21253a] border border-[#2a2f45] text-slate-300 hover:bg-[#2a2f45] hover:text-slate-100 rounded text-[13px] transition-colors"
+            onClick={() => setDate(today)}
+            title="Go to today"
+          >Today</button>
+          <button
+            className="px-2 py-1 bg-[#21253a] border border-[#2a2f45] text-slate-300 hover:bg-[#2a2f45] hover:text-slate-100 rounded text-[13px] transition-colors"
             onClick={() => setDate(d => { const dt = new Date(d + 'T12:00:00'); dt.setDate(dt.getDate() - 1); return dt.toISOString().split('T')[0]; })}
             title="Previous day"
           >←</button>

@@ -70,16 +70,16 @@ export default function TechColumn({ tech, allTechs, boardDate, onSetTime, onSet
     <div
       ref={setSortableRef}
       style={style}
-      className={`flex-1 min-w-[180px] border rounded-lg flex flex-col overflow-hidden${isOff ? ' bg-red-950/30 border-red-800/50' : ' bg-[#1a1d27] border-[#2a2f45]'}`}
+      className={`flex-1 min-w-[180px] border rounded-lg flex flex-col overflow-hidden${isOff ? ' bg-red-900/25 border-red-500/60' : ' bg-[#1a1d27] border-[#2a2f45]'}`}
     >
       <div
-        className={`px-3 py-2.5 border-b border-t-[3px] flex-shrink-0 flex items-center justify-between group cursor-grab active:cursor-grabbing${isOff ? ' border-b-red-800/50' : ' border-b-[#2a2f45]'}`}
+        className={`px-3 py-2.5 border-b border-t-[3px] flex-shrink-0 flex items-center justify-between group cursor-grab active:cursor-grabbing${isOff ? ' border-b-red-500/50 bg-red-900/30' : ' border-b-[#2a2f45]'}`}
         style={{ borderTopColor: isOff ? '#ef4444' : (tech.color || '#3b82f6') }}
         {...attributes}
         {...listeners}
       >
         <div className="flex items-center gap-1.5 min-w-0">
-          <span className={`text-[13px] font-semibold truncate${isOff ? ' text-slate-500' : ' text-slate-200'}`}>{tech.name}</span>
+          <span className={`text-[13px] font-semibold truncate${isOff ? ' text-red-200' : ' text-slate-200'}`}>{tech.name}</span>
           {isOff && (
             <span className="text-[10px] font-bold px-1.5 py-px rounded-full bg-red-500/20 text-red-400 border border-red-500/30 flex-shrink-0">OFF</span>
           )}
@@ -104,7 +104,7 @@ export default function TechColumn({ tech, allTechs, boardDate, onSetTime, onSet
       </div>
       <div
         ref={setDropRef}
-        className={`flex-1 overflow-y-auto p-2 flex flex-col gap-[5px] min-h-[60px] transition-all duration-150${isOff ? ' bg-red-950/20' : ''}${isOver && !isOff ? ' bg-blue-500/15 outline-dashed outline-2 outline-blue-500/60 outline-offset-[-4px] rounded scale-[1.01]' : ''}`}
+        className={`flex-1 overflow-y-auto p-2 flex flex-col gap-[5px] min-h-[60px] transition-all duration-150${isOff ? ' bg-red-900/15' : ''}${isOver && !isOff ? ' bg-blue-500/15 outline-dashed outline-2 outline-blue-500/60 outline-offset-[-4px] rounded scale-[1.01]' : ''}`}
       >
         <SortableContext items={items.map((i) => i.dndId)} strategy={verticalListSortingStrategy}>
           {items.length === 0 && (

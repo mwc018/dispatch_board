@@ -71,6 +71,13 @@ db.exec(`
     FOREIGN KEY (service_order_id) REFERENCES service_orders(id) ON DELETE CASCADE
   );
 
+  CREATE TABLE IF NOT EXISTS tech_day_off (
+    technician_id INTEGER NOT NULL,
+    date TEXT NOT NULL,
+    PRIMARY KEY (technician_id, date),
+    FOREIGN KEY (technician_id) REFERENCES technicians(id) ON DELETE CASCADE
+  );
+
   CREATE INDEX IF NOT EXISTS idx_assignments_date ON dispatch_assignments(dispatch_date);
   CREATE INDEX IF NOT EXISTS idx_assignments_tech ON dispatch_assignments(technician_id, dispatch_date);
 `);

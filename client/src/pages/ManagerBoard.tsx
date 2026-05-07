@@ -45,6 +45,7 @@ import {
   addServiceOrder,
   clearAllServiceOrders,
   reorderTechnicians,
+  toggleTechOff,
 } from '../api/client';
 import { BoardState, DndCardItem, AddTechData, AddOrderData, DispatchAssignment } from '../types';
 
@@ -279,6 +280,10 @@ export default function ManagerBoard() {
     toast.success('Technician added');
   };
 
+  const handleToggleOff = async (techId: number) => {
+    await toggleTechOff(techId, date);
+  };
+
   const handleDeleteTech = (techId: number) => {
     toast.confirm('Remove this technician from the board?', async () => {
       await deleteTechnician(techId);
@@ -416,6 +421,7 @@ export default function ManagerBoard() {
                   onUnassign={handleUnassign}
                   onDeleteTech={handleDeleteTech}
                   onAssignTo={(item, fromTechId, fromDate) => handleOpenAssignModal(item, fromTechId, fromDate)}
+                  onToggleOff={handleToggleOff}
                   highlightedSoId={recentlyDroppedSoId}
                 />
               ))}

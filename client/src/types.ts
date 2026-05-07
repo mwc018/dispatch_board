@@ -49,6 +49,7 @@ export interface DispatchAssignment {
 
 export interface TechWithAssignments extends Technician {
   assignments: DispatchAssignment[];
+  is_off?: boolean;
 }
 
 export interface BoardState {

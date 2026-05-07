@@ -25,6 +25,8 @@ function getBoardState(date?: string): BoardState {
       WHERE da.technician_id = ? AND da.dispatch_date = ?
       ORDER BY da.priority ASC
     `).all([tech.id, today]);
+    const off = db.prepare('SELECT 1 FROM tech_day_off WHERE technician_id = ? AND date = ?').get([tech.id, today]);
+    tech.is_off = !!off;
   }
 
   return { date: today, unassigned, technicians };
@@ -305,6 +307,28 @@ router.post('/uncomplete', async (req: Request, res: Response) => {
   updateServiceOrderAssignment({ zohoId: assignment.zoho_id, status: 'Assigned' });
 
   const board = getBoardState(dispatchDate);
+  req.app.get('io')?.emit('board:updated', board);
+  res.json(board);
+});
+
+router.get('/off-days', (req: Request, res: Response) => {
+  const date = (req.query.date as string) || new Date().toISOString().split('T')[0];
+  const rows = db.prepare('SELECT technician_id FROM tech_day_off WHERE date = ?').all([date]) as any[];
+  res.json(rows.map((r) => r.technician_id));
+});
+
+router.post('/toggle-off', (req: Request, res: Response) => {
+  const { technician_id, date } = req.body;
+  if (!technician_id || !date) return res.status(400).json({ error: 'technician_id and date are required' });
+
+  const existing = db.prepare('SELECT 1 FROM tech_day_off WHERE technician_id = ? AND date = ?').get([technician_id, date]);
+  if (existing) {
+    db.prepare('DELETE FROM tech_day_off WHERE technician_id = ? AND date = ?').run([technician_id, date]);
+  } else {
+    db.prepare('INSERT INTO tech_day_off (technician_id, date) VALUES (?, ?)').run([technician_id, date]);
+  }
+
+  const board = getBoardState(date);
   req.app.get('io')?.emit('board:updated', board);
   res.json(board);
 });

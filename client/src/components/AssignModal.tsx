@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Technician } from '../types';
+import { getOffDays } from '../api/client';
 
 interface AssignModalProps {
   label: string;
@@ -12,6 +13,19 @@ interface AssignModalProps {
 export default function AssignModal({ label, techs, defaultDate, onClose, onSubmit }: AssignModalProps) {
   const [selectedDate, setSelectedDate] = useState(defaultDate);
   const [selectedTechId, setSelectedTechId] = useState<number | ''>(techs[0]?.id ?? '');
+  const [offTechIds, setOffTechIds] = useState<number[]>([]);
+
+  useEffect(() => {
+    getOffDays(selectedDate).then((ids) => {
+      setOffTechIds(ids);
+      if (ids.includes(Number(selectedTechId))) {
+        const first = techs.find((t) => !ids.includes(t.id));
+        setSelectedTechId(first?.id ?? '');
+      }
+    });
+  }, [selectedDate]);
+
+  const availableTechs = techs.filter((t) => !offTechIds.includes(t.id));
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onClose}>
@@ -34,15 +48,19 @@ export default function AssignModal({ label, techs, defaultDate, onClose, onSubm
           </div>
           <div>
             <label className="text-[11px] text-slate-400 mb-1 block">Technician</label>
-            <select
-              value={selectedTechId}
-              onChange={(e) => setSelectedTechId(Number(e.target.value))}
-              className="w-full px-2.5 py-1.5 border border-[#2a2f45] rounded text-[13px] text-slate-200 bg-[#21253a] focus:outline-none focus:border-blue-500"
-            >
-              {techs.map((t) => (
-                <option key={t.id} value={t.id}>{t.name}</option>
-              ))}
-            </select>
+            {availableTechs.length === 0 ? (
+              <p className="text-[12px] text-slate-500 px-1">All technicians are off on this date.</p>
+            ) : (
+              <select
+                value={selectedTechId}
+                onChange={(e) => setSelectedTechId(Number(e.target.value))}
+                className="w-full px-2.5 py-1.5 border border-[#2a2f45] rounded text-[13px] text-slate-200 bg-[#21253a] focus:outline-none focus:border-blue-500"
+              >
+                {availableTechs.map((t) => (
+                  <option key={t.id} value={t.id}>{t.name}</option>
+                ))}
+              </select>
+            )}
           </div>
         </div>
 
@@ -55,7 +73,7 @@ export default function AssignModal({ label, techs, defaultDate, onClose, onSubm
           </button>
           <button
             onClick={() => { if (selectedTechId && selectedDate) onSubmit(Number(selectedTechId), selectedDate); }}
-            disabled={!selectedTechId || !selectedDate}
+            disabled={!selectedTechId || !selectedDate || availableTechs.length === 0}
             className="px-3 py-1.5 rounded text-[12px] font-medium text-white bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             Assign

@@ -65,6 +65,12 @@ export const syncZohoTechs = (): Promise<{ success: boolean; added: number; tota
 export const reorderTechnicians = (ordered_ids: number[]): Promise<{ success: boolean }> =>
   api.post('/technicians/reorder', { ordered_ids }).then((r) => r.data);
 
+export const getOffDays = (date: string): Promise<number[]> =>
+  api.get('/dispatch/off-days', { params: { date } }).then((r) => r.data);
+
+export const toggleTechOff = (technician_id: number, date: string): Promise<BoardState> =>
+  api.post('/dispatch/toggle-off', { technician_id, date }).then((r) => r.data);
+
 
 export const addServiceOrder = (data: AddOrderData): Promise<ServiceOrder> =>
   api.post('/service-orders', data).then((r) => r.data);

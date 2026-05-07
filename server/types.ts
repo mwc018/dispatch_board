@@ -50,6 +50,7 @@ export interface AssignmentWithOrder extends DispatchAssignment {
 
 export interface TechWithAssignments extends Technician {
   assignments: AssignmentWithOrder[];
+  is_off?: boolean;
 }
 
 export interface BoardState {

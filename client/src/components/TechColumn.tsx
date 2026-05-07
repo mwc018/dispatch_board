@@ -14,11 +14,12 @@ interface TechColumnProps {
   onUnassign: (id: number, techId: number) => void;
   onDeleteTech: (techId: number) => void;
   onAssignTo: (item: DndCardItem, fromTechId: number, fromDate: string) => void;
+  onToggleOff: (techId: number) => void;
   highlightedSoId?: number | null;
 }
 
-export default function TechColumn({ tech, allTechs, boardDate, onSetTime, onSetNotes, onUnassign, onDeleteTech, onAssignTo, highlightedSoId }: TechColumnProps) {
-  const { setNodeRef: setDropRef, isOver } = useDroppable({ id: `tech_${tech.id}` });
+export default function TechColumn({ tech, allTechs, boardDate, onSetTime, onSetNotes, onUnassign, onDeleteTech, onAssignTo, onToggleOff, highlightedSoId }: TechColumnProps) {
+  const { setNodeRef: setDropRef, isOver } = useDroppable({ id: `tech_${tech.id}`, disabled: !!tech.is_off });
 
   const {
     attributes,
@@ -36,6 +37,7 @@ export default function TechColumn({ tech, allTechs, boardDate, onSetTime, onSet
   };
 
   const assignments = tech.assignments || [];
+  const isOff = !!tech.is_off;
 
   const items: DndCardItem[] = assignments.map((a) => {
     const coAssignees = allTechs
@@ -68,17 +70,29 @@ export default function TechColumn({ tech, allTechs, boardDate, onSetTime, onSet
     <div
       ref={setSortableRef}
       style={style}
-      className="flex-1 min-w-[180px] bg-[#1a1d27] border border-[#2a2f45] rounded-lg flex flex-col overflow-hidden"
+      className={`flex-1 min-w-[180px] border rounded-lg flex flex-col overflow-hidden${isOff ? ' bg-[#15161e] border-[#2a2f45]/60' : ' bg-[#1a1d27] border-[#2a2f45]'}`}
     >
       <div
         className="px-3 py-2.5 border-b border-[#2a2f45] border-t-[3px] flex-shrink-0 flex items-center justify-between group cursor-grab active:cursor-grabbing"
-        style={{ borderTopColor: tech.color || '#3b82f6' }}
+        style={{ borderTopColor: isOff ? '#6b7280' : (tech.color || '#3b82f6') }}
         {...attributes}
         {...listeners}
       >
-        <span className="text-[13px] font-semibold text-slate-200">{tech.name}</span>
-        <div className="flex items-center gap-2" onPointerDown={(e) => e.stopPropagation()}>
+        <div className="flex items-center gap-1.5 min-w-0">
+          <span className={`text-[13px] font-semibold truncate${isOff ? ' text-slate-500' : ' text-slate-200'}`}>{tech.name}</span>
+          {isOff && (
+            <span className="text-[10px] font-bold px-1.5 py-px rounded-full bg-red-500/20 text-red-400 border border-red-500/30 flex-shrink-0">OFF</span>
+          )}
+        </div>
+        <div className="flex items-center gap-1.5 flex-shrink-0" onPointerDown={(e) => e.stopPropagation()}>
           <span className="text-[11px] text-slate-500">{assignments.length} jobs</span>
+          <button
+            className={`transition-opacity text-[11px] font-medium leading-none px-1.5 py-px rounded border${isOff ? ' text-red-400 border-red-500/40 bg-red-500/10 hover:bg-red-500/20' : ' opacity-0 group-hover:opacity-100 text-slate-500 border-transparent hover:text-amber-400 hover:border-amber-500/40 hover:bg-amber-500/10'}`}
+            onClick={() => onToggleOff(tech.id)}
+            title={isOff ? 'Mark as available' : 'Mark as off'}
+          >
+            {isOff ? 'Off' : 'Off'}
+          </button>
           <button
             className="opacity-0 group-hover:opacity-100 transition-opacity text-slate-600 hover:text-red-400 text-[13px] leading-none px-1"
             onClick={() => onDeleteTech(tech.id)}
@@ -90,12 +104,12 @@ export default function TechColumn({ tech, allTechs, boardDate, onSetTime, onSet
       </div>
       <div
         ref={setDropRef}
-        className={`flex-1 overflow-y-auto p-2 flex flex-col gap-[5px] min-h-[60px] transition-all duration-150${isOver ? ' bg-blue-500/15 outline-dashed outline-2 outline-blue-500/60 outline-offset-[-4px] rounded scale-[1.01]' : ''}`}
+        className={`flex-1 overflow-y-auto p-2 flex flex-col gap-[5px] min-h-[60px] transition-all duration-150${isOff ? ' opacity-50' : ''}${isOver && !isOff ? ' bg-blue-500/15 outline-dashed outline-2 outline-blue-500/60 outline-offset-[-4px] rounded scale-[1.01]' : ''}`}
       >
         <SortableContext items={items.map((i) => i.dndId)} strategy={verticalListSortingStrategy}>
           {items.length === 0 && (
             <div className="border-2 border-dashed border-[#2a2f45] rounded-lg p-4 text-center text-slate-500 text-[12px]">
-              Drop jobs here
+              {isOff ? 'Technician is off' : 'Drop jobs here'}
             </div>
           )}
           {items.map((item) => (

@@ -10,6 +10,8 @@ interface ServiceOrderCardProps {
   assignmentId?: number;
   onSetTime?: (assignmentId: number | undefined, scheduledTime: string | null | undefined) => void;
   onSetNotes?: (assignmentId: number | undefined, notes: string | null | undefined) => void;
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
   onUnassign?: (id: number) => void;
   onDelete?: (id: number) => void;
   onAssignTo?: () => void;
@@ -28,6 +30,8 @@ export default function ServiceOrderCard({
   assignmentId,
   onSetTime,
   onSetNotes,
+  onMoveUp,
+  onMoveDown,
   onUnassign,
   onDelete,
   onAssignTo,
@@ -61,7 +65,24 @@ export default function ServiceOrderCard({
       {...attributes}
       {...listeners}
     >
-      <div className="flex-none w-full">
+      {(onMoveUp || onMoveDown) && (
+        <div
+          className="flex flex-col gap-0.5 flex-shrink-0 self-center"
+          onPointerDown={(e) => e.stopPropagation()}
+        >
+          <button
+            onClick={(e) => { e.stopPropagation(); onMoveUp?.(); }}
+            disabled={!onMoveUp}
+            className="text-slate-400 hover:text-slate-100 disabled:opacity-20 disabled:cursor-default text-[11px] leading-none p-0.5 transition-colors"
+          >▲</button>
+          <button
+            onClick={(e) => { e.stopPropagation(); onMoveDown?.(); }}
+            disabled={!onMoveDown}
+            className="text-slate-400 hover:text-slate-100 disabled:opacity-20 disabled:cursor-default text-[11px] leading-none p-0.5 transition-colors"
+          >▼</button>
+        </div>
+      )}
+      <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1 flex-wrap mb-[3px]">
           {item.so_number && (
             <span className="bg-violet-500/20 text-violet-300 text-[10px] font-bold px-1.5 py-px rounded-full flex-shrink-0 tracking-[0.03em]">

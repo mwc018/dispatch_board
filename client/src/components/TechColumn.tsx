@@ -15,10 +15,11 @@ interface TechColumnProps {
   onDeleteTech: (techId: number) => void;
   onAssignTo: (item: DndCardItem, fromTechId: number, fromDate: string) => void;
   onToggleOff: (techId: number) => void;
+  onReorderItems: (techId: number, orderedAssignmentIds: number[]) => void;
   highlightedSoId?: number | null;
 }
 
-export default function TechColumn({ tech, allTechs, boardDate, onSetTime, onSetNotes, onUnassign, onDeleteTech, onAssignTo, onToggleOff, highlightedSoId }: TechColumnProps) {
+export default function TechColumn({ tech, allTechs, boardDate, onSetTime, onSetNotes, onUnassign, onDeleteTech, onAssignTo, onToggleOff, onReorderItems, highlightedSoId }: TechColumnProps) {
   const { setNodeRef: setDropRef, isOver } = useDroppable({ id: `tech_${tech.id}`, disabled: !!tech.is_off });
 
   const {
@@ -66,6 +67,13 @@ export default function TechColumn({ tech, allTechs, boardDate, onSetTime, onSet
     };
   });
 
+  const handleMove = (index: number, direction: -1 | 1) => {
+    const newItems = [...items];
+    const swapIdx = index + direction;
+    [newItems[index], newItems[swapIdx]] = [newItems[swapIdx], newItems[index]];
+    onReorderItems(tech.id, newItems.map((i) => i.assignmentId!));
+  };
+
   return (
     <div
       ref={setSortableRef}
@@ -112,7 +120,7 @@ export default function TechColumn({ tech, allTechs, boardDate, onSetTime, onSet
               {isOff ? 'Technician is off' : 'Drop jobs here'}
             </div>
           )}
-          {items.map((item) => (
+          {items.map((item, index) => (
             <ServiceOrderCard
               key={item.dndId}
               item={item}
@@ -127,6 +135,8 @@ export default function TechColumn({ tech, allTechs, boardDate, onSetTime, onSet
               onSetNotes={onSetNotes}
               onUnassign={(id) => onUnassign(id, tech.id)}
               onAssignTo={() => onAssignTo(item, tech.id, boardDate)}
+              onMoveUp={index > 0 ? () => handleMove(index, -1) : undefined}
+              onMoveDown={index < items.length - 1 ? () => handleMove(index, 1) : undefined}
               isCompleted={!!item.is_completed}
             />
           ))}

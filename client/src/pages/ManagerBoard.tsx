@@ -284,6 +284,10 @@ export default function ManagerBoard() {
     await toggleTechOff(techId, date);
   };
 
+  const handleReorderItems = async (techId: number, orderedAssignmentIds: number[]) => {
+    await reorderTech(techId, date, orderedAssignmentIds);
+  };
+
   const handleDeleteTech = (techId: number) => {
     toast.confirm('Remove this technician from the board?', async () => {
       await deleteTechnician(techId);
@@ -422,6 +426,7 @@ export default function ManagerBoard() {
                   onDeleteTech={handleDeleteTech}
                   onAssignTo={(item, fromTechId, fromDate) => handleOpenAssignModal(item, fromTechId, fromDate)}
                   onToggleOff={handleToggleOff}
+                  onReorderItems={handleReorderItems}
                   highlightedSoId={recentlyDroppedSoId}
                 />
               ))}

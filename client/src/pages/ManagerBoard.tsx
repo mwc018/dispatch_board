@@ -285,7 +285,8 @@ export default function ManagerBoard() {
   };
 
   const handleReorderItems = async (techId: number, orderedAssignmentIds: number[]) => {
-    await reorderTech(techId, date, orderedAssignmentIds);
+    const newBoard = await reorderTech(techId, date, orderedAssignmentIds);
+    setBoard(newBoard);
   };
 
   const handleDeleteTech = (techId: number) => {

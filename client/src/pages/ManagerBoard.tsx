@@ -178,7 +178,8 @@ export default function ManagerBoard() {
             t.id === techId ? { ...t, assignments: newAssignments } : t
           ),
         }) : b);
-        await reorderTech(techId, date, newAssignments.map((a) => a.id));
+        const newBoard = await reorderTech(techId, date, newAssignments.map((a) => a.id));
+        setBoard(newBoard);
       }
       return;
     }
@@ -187,7 +188,8 @@ export default function ManagerBoard() {
       const techId = parseInt(targetContainer.replace('tech_', ''));
       const order = board.unassigned.find((o) => `so_${o.id}` === activeDndId);
       if (!order) return;
-      await alsoAssign(order.id, techId, date);
+      const newBoard = await alsoAssign(order.id, techId, date);
+      setBoard(newBoard);
       setRecentlyDroppedSoId(order.id);
       setTimeout(() => setRecentlyDroppedSoId(null), 1500);
     }
@@ -198,14 +200,16 @@ export default function ManagerBoard() {
       const dropIdx = board.unassigned.findIndex((o) => `so_${o.id}` === overDndId);
       const position = dropIdx >= 0 ? dropIdx : undefined;
       const sourceTechId = parseInt(sourceContainer.replace('tech_', ''));
-      await unassignOrder(assignment.service_order_id, date, position, sourceTechId);
+      const newBoard = await unassignOrder(assignment.service_order_id, date, position, sourceTechId);
+      setBoard(newBoard);
     }
 
     if (sourceContainer.startsWith('tech_') && targetContainer.startsWith('tech_') && sourceContainer !== targetContainer) {
       const targetTechId = parseInt(targetContainer.replace('tech_', ''));
       const assignment = findAssignmentByDndId(activeDndId);
       if (assignment) {
-        await alsoAssign(assignment.service_order_id, targetTechId, date);
+        const newBoard = await alsoAssign(assignment.service_order_id, targetTechId, date);
+        setBoard(newBoard);
         setRecentlyDroppedSoId(assignment.service_order_id);
         setTimeout(() => setRecentlyDroppedSoId(null), 1500);
       }
@@ -227,7 +231,8 @@ export default function ManagerBoard() {
 
   const handleTimeSave = async (newTime: string | null) => {
     if (!timeModal) return;
-    await setTime(timeModal.assignmentId, newTime, date);
+    const newBoard = await setTime(timeModal.assignmentId, newTime, date);
+    setBoard(newBoard);
     setTimeModal(null);
     toast.success(newTime ? 'Time updated' : 'Time cleared');
   };
@@ -239,13 +244,15 @@ export default function ManagerBoard() {
 
   const handleNotesSave = async (newNotes: string | null) => {
     if (!notesModal) return;
-    await setNotes(notesModal.assignmentId, newNotes, date);
+    const newBoard = await setNotes(notesModal.assignmentId, newNotes, date);
+    setBoard(newBoard);
     setNotesModal(null);
     toast.success('Notes saved');
   };
 
   const handleUnassign = async (serviceOrderId: number, techId: number) => {
-    await unassignOrder(serviceOrderId, date, undefined, techId);
+    const newBoard = await unassignOrder(serviceOrderId, date, undefined, techId);
+    setBoard(newBoard);
   };
 
   const handleOpenAssignModal = (item: DndCardItem, fromTechId?: number, fromDate?: string) => {
@@ -262,7 +269,8 @@ export default function ManagerBoard() {
     if (assignModal.fromTechId && assignModal.fromDate) {
       await unassignOrder(assignModal.serviceOrderId, assignModal.fromDate, undefined, assignModal.fromTechId);
     }
-    await alsoAssign(assignModal.serviceOrderId, techId, targetDate);
+    const newBoard = await alsoAssign(assignModal.serviceOrderId, techId, targetDate);
+    setBoard(newBoard);
     setAssignModal(null);
     setDate(targetDate);
   };
@@ -281,7 +289,8 @@ export default function ManagerBoard() {
   };
 
   const handleToggleOff = async (techId: number) => {
-    await toggleTechOff(techId, date);
+    const newBoard = await toggleTechOff(techId, date);
+    setBoard(newBoard);
   };
 
   const handleReorderItems = async (techId: number, orderedAssignmentIds: number[]) => {
